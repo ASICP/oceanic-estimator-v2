@@ -691,8 +691,8 @@ export class DatabaseStorage implements IStorage {
   }
 }
 
-// Switch to database storage
+// Switch to database storage - needed for persistence between API requests
 export const storage = new DatabaseStorage();
 
-// Keep the old MemStorage implementation but use DatabaseStorage now
+// Use MemStorage for development only (not persistent)
 // export const storage = new MemStorage();

@@ -2,15 +2,26 @@ import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { Router } from "express";
 import { z } from "zod";
+import Stripe from "stripe";
 import { storage } from "./storage";
 import { 
   insertWorkflowSchema,
   insertAgentSchema, 
   insertCostEstimateSchema,
   insertCostBreakdownItemSchema,
-  insertPricingModelSchema
+  insertPricingModelSchema,
+  type InsertSharedResult,
+  type InsertContract
 } from "@shared/schema";
 import { CostCalculator, costCalculationSchema } from "./costCalculator";
+
+// Initialize Stripe
+if (!process.env.STRIPE_SECRET_KEY) {
+  throw new Error('Missing required Stripe secret: STRIPE_SECRET_KEY');
+}
+const stripe = new Stripe(process.env.STRIPE_SECRET_KEY, {
+  apiVersion: "2025-08-27.basil",
+});
 
 const router = Router();
 
@@ -280,6 +291,355 @@ router.post("/api/pricing-models", async (req, res) => {
   } catch (error) {
     console.error("Error creating pricing model:", error);
     res.status(500).json({ error: "Failed to create pricing model" });
+  }
+});
+
+// PDF Export endpoints
+router.post("/api/export-pdf", async (req, res) => {
+  try {
+    const { estimateId, type } = req.body; // type: 'summary' or 'detailed'
+    
+    const estimate = await storage.getCostEstimate(estimateId);
+    if (!estimate) {
+      return res.status(404).json({ error: "Cost estimate not found" });
+    }
+
+    // Generate PDF URL (this will be handled by the frontend)
+    const fileName = `${type === 'detailed' ? 'detailed_' : ''}cost_estimate_${estimateId}.pdf`;
+    
+    res.json({ 
+      success: true, 
+      fileName,
+      estimate,
+      downloadUrl: `/api/download-pdf/${estimateId}?type=${type}`
+    });
+  } catch (error) {
+    console.error("Error preparing PDF export:", error);
+    res.status(500).json({ error: "Failed to prepare PDF export" });
+  }
+});
+
+// Share Results endpoints
+router.post("/api/share-results", async (req, res) => {
+  try {
+    const { estimateId, title } = req.body;
+    
+    const estimate = await storage.getCostEstimate(estimateId);
+    if (!estimate) {
+      return res.status(404).json({ error: "Cost estimate not found" });
+    }
+    
+    // Generate unique share URL
+    const shareUrl = `share/${Math.random().toString(36).substring(2)}${Date.now().toString(36)}`;
+    
+    const sharedResult: InsertSharedResult = {
+      estimateId,
+      shareUrl,
+      title: title || estimate.title || 'Cost Estimation Results',
+      isPublic: true,
+      expiresAt: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000) // 30 days
+    };
+    
+    const result = await storage.createSharedResult(sharedResult);
+    
+    // Generate social media sharing URLs
+    const baseUrl = `${req.protocol}://${req.get('host')}`;
+    const fullShareUrl = `${baseUrl}/${shareUrl}`;
+    const encodedUrl = encodeURIComponent(fullShareUrl);
+    const encodedTitle = encodeURIComponent(`Check out this cost estimation: ${result.title}`);
+    
+    const socialLinks = {
+      twitter: `https://twitter.com/intent/tweet?text=${encodedTitle}&url=${encodedUrl}`,
+      linkedin: `https://www.linkedin.com/sharing/share-offsite/?url=${encodedUrl}`,
+      facebook: `https://www.facebook.com/sharer/sharer.php?u=${encodedUrl}`,
+      email: `mailto:?subject=${encodedTitle}&body=I wanted to share this cost estimation with you: ${encodedUrl}`
+    };
+    
+    res.json({ 
+      success: true, 
+      shareUrl: fullShareUrl,
+      socialLinks,
+      result
+    });
+  } catch (error) {
+    console.error("Error creating shared result:", error);
+    res.status(500).json({ error: "Failed to create shared result" });
+  }
+});
+
+router.get("/api/shared/:shareUrl", async (req, res) => {
+  try {
+    const sharedResult = await storage.getSharedResultByUrl(`share/${req.params.shareUrl}`);
+    if (!sharedResult) {
+      return res.status(404).json({ error: "Shared result not found" });
+    }
+    
+    // Increment view count
+    await storage.updateSharedResult(sharedResult.id, {
+      viewCount: (sharedResult.viewCount || 0) + 1
+    });
+    
+    const estimate = await storage.getCostEstimate(sharedResult.estimateId);
+    res.json({ sharedResult, estimate });
+  } catch (error) {
+    console.error("Error fetching shared result:", error);
+    res.status(500).json({ error: "Failed to fetch shared result" });
+  }
+});
+
+// Contract/Stripe endpoints
+router.post("/api/generate-contract", async (req, res) => {
+  try {
+    const { estimateId, clientName, clientEmail } = req.body;
+    
+    const estimate = await storage.getCostEstimate(estimateId);
+    if (!estimate) {
+      return res.status(404).json({ error: "Cost estimate not found" });
+    }
+    
+    // Generate contract number
+    const contractNumber = `EV-${Date.now().toString(36).toUpperCase()}`;
+    
+    const contract: InsertContract = {
+      estimateId,
+      contractNumber,
+      clientName,
+      clientEmail,
+      totalAmount: estimate.totalCost,
+      status: "draft"
+    };
+    
+    const createdContract = await storage.createContract(contract);
+    
+    res.json({ 
+      success: true,
+      contract: createdContract,
+      invoiceUrl: `/api/invoice/${createdContract.id}`,
+      checkoutUrl: `/api/checkout/${createdContract.id}`
+    });
+  } catch (error) {
+    console.error("Error generating contract:", error);
+    res.status(500).json({ error: "Failed to generate contract" });
+  }
+});
+
+router.get("/api/invoice/:contractId", async (req, res) => {
+  try {
+    const contract = await storage.getContract(req.params.contractId);
+    if (!contract) {
+      return res.status(404).json({ error: "Contract not found" });
+    }
+    
+    const estimate = await storage.getCostEstimate(contract.estimateId);
+    
+    // Generate invoice data
+    const invoice = {
+      contractNumber: contract.contractNumber,
+      clientName: contract.clientName,
+      clientEmail: contract.clientEmail,
+      totalAmount: contract.totalAmount,
+      status: contract.status,
+      estimate,
+      issueDate: contract.createdAt,
+      dueDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000), // 30 days from now
+      items: [
+        {
+          description: `Cost Estimation Implementation: ${estimate?.title || 'Custom Workflow'}`,
+          quantity: 1,
+          unitPrice: contract.totalAmount,
+          total: contract.totalAmount
+        }
+      ]
+    };
+    
+    res.json(invoice);
+  } catch (error) {
+    console.error("Error fetching invoice:", error);
+    res.status(500).json({ error: "Failed to fetch invoice" });
+  }
+});
+
+router.post("/api/create-checkout-session", async (req, res) => {
+  try {
+    const { contractId } = req.body;
+    
+    const contract = await storage.getContract(contractId);
+    if (!contract) {
+      return res.status(404).json({ error: "Contract not found" });
+    }
+    
+    const estimate = await storage.getCostEstimate(contract.estimateId);
+    
+    const session = await stripe.checkout.sessions.create({
+      payment_method_types: ['card'],
+      line_items: [{
+        price_data: {
+          currency: 'usd',
+          product_data: {
+            name: `Cost Estimation Implementation: ${estimate?.title || 'Custom Workflow'}`,
+            description: `Contract ${contract.contractNumber}`,
+          },
+          unit_amount: Math.round(parseFloat(contract.totalAmount.toString()) * 100), // Convert to cents
+        },
+        quantity: 1,
+      }],
+      mode: 'payment',
+      success_url: `${req.headers.origin}/success?session_id={CHECKOUT_SESSION_ID}`,
+      cancel_url: `${req.headers.origin}/cancel`,
+      customer_email: contract.clientEmail || undefined,
+      metadata: {
+        contractId: contract.id,
+        estimateId: contract.estimateId
+      }
+    });
+    
+    // Update contract with checkout session ID
+    await storage.updateContract(contract.id, {
+      stripeCheckoutSessionId: session.id,
+      status: "sent"
+    });
+    
+    res.json({ sessionId: session.id, checkoutUrl: session.url });
+  } catch (error) {
+    console.error("Error creating checkout session:", error);
+    res.status(500).json({ error: "Failed to create checkout session" });
+  }
+});
+
+// Database seeding endpoint (for development)
+router.post("/api/seed-database", async (req, res) => {
+  try {
+    // Check if data already exists
+    const existingWorkflows = await storage.getWorkflows();
+    if (existingWorkflows.length > 0) {
+      return res.json({ message: "Database already seeded" });
+    }
+    
+    // Seed workflows
+    const sampleWorkflows = [
+      {
+        title: "Deal Sourcing",
+        domain: "Investment Ops",
+        description: "Autonomous sourcing & pipeline mgmt for roll-ups/SaaS targets.",
+        complexity: "Medium",
+        duration: "4-8 hrs",
+        isPreset: true,
+        defaultAgentIds: ["clay", "lyla", "gemma"],
+        costModel: "Token + seat ($49/month + $0.01/1K)",
+        savingsPercentage: 65
+      },
+      {
+        title: "Financial Modeling",
+        domain: "Investment Ops", 
+        description: "Qualify deals, build models for EBITDA analysis.",
+        complexity: "High",
+        duration: "6-12 hrs",
+        isPreset: true,
+        defaultAgentIds: ["finley", "clay", "financebot"],
+        costModel: "Hybrid ($149/dept + tokens)",
+        savingsPercentage: 70
+      },
+      {
+        title: "Legal Review",
+        domain: "Deal Execution",
+        description: "Dataroom prep, term sheets, redlines.",
+        complexity: "Medium", 
+        duration: "3-6 hrs",
+        isPreset: true,
+        defaultAgentIds: ["lex", "ivy", "bree"],
+        costModel: "Pay-per-use ($0.005/1K via Groq)",
+        savingsPercentage: 60
+      }
+    ];
+    
+    for (const workflow of sampleWorkflows) {
+      await storage.createWorkflow(workflow);
+    }
+    
+    // Seed agents
+    const sampleAgents = [
+      {
+        name: "Clay",
+        role: "Project Manager", 
+        domain: "Investment Ops",
+        description: "Manages projects, sourcing, pipeline management, and diligence checklists with Harvard-level capabilities.",
+        capabilities: ["Project Management", "Pipeline Mgmt", "Diligence", "Sourcing"],
+        avatarUrl: "/assets/generated_images/Professional_Clay_agent_avatar_12ae85f9.png",
+        isRecommended: true,
+        baseCostPerHour: "150.00"
+      },
+      {
+        name: "Finley",
+        role: "Financial Modeling",
+        domain: "Investment Ops",
+        description: "Deal qualification, financial modeling, and EBITDA analysis with advanced Harvard Business School graduate capabilities.",
+        capabilities: ["Financial Modeling", "Deal Analysis", "EBITDA", "Valuation"],
+        avatarUrl: "/assets/generated_images/Professional_Finley_agent_avatar_b19d0057.png",
+        isRecommended: true,
+        baseCostPerHour: "200.00"
+      },
+      {
+        name: "Lex",
+        role: "Legal Specialist",
+        domain: "Deal Execution",
+        description: "Legal review, dataroom preparation, term sheet automation, and compliance management.",
+        capabilities: ["Legal Review", "Compliance", "Term Sheets", "Due Diligence"],
+        avatarUrl: "/assets/generated_images/Professional_Lex_agent_avatar_bcd47740.png",
+        isRecommended: true,
+        baseCostPerHour: "175.00"
+      },
+      {
+        name: "Bree",
+        role: "Investor Relations",
+        domain: "Fund Admin & IR", 
+        description: "LP communications, reporting, subscription document processing, and investor relations management.",
+        capabilities: ["LP Comms", "Reporting", "IR", "Documentation"],
+        avatarUrl: "/assets/generated_images/Professional_Bree_agent_avatar_c0a3af89.png",
+        isRecommended: false,
+        baseCostPerHour: "125.00"
+      }
+    ];
+    
+    for (const agent of sampleAgents) {
+      await storage.createAgent(agent);
+    }
+    
+    // Seed pricing models
+    const samplePricingModels = [
+      {
+        name: "Individual",
+        tier: "individual",
+        seatPrice: "29.00",
+        tokenRate: "0.015",
+        description: "For small teams and individual users",
+        isActive: true
+      },
+      {
+        name: "Department", 
+        tier: "department",
+        seatPrice: "49.00",
+        tokenRate: "0.01",
+        description: "For department-level operations",
+        isActive: true
+      },
+      {
+        name: "Enterprise",
+        tier: "enterprise", 
+        seatPrice: "149.00",
+        tokenRate: "0.005",
+        description: "For large-scale enterprise deployments",
+        isActive: true
+      }
+    ];
+    
+    for (const model of samplePricingModels) {
+      await storage.createPricingModel(model);
+    }
+    
+    res.json({ message: "Database seeded successfully" });
+  } catch (error) {
+    console.error("Error seeding database:", error);
+    res.status(500).json({ error: "Failed to seed database" });
   }
 });
 

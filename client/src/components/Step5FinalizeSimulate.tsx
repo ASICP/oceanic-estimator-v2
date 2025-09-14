@@ -1,8 +1,17 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Separator } from "@/components/ui/separator";
 import CostDashboard from "./CostDashboard";
-import { FileText, Download, Share2 } from "lucide-react";
+import { FileText, Download, Share2, Twitter, Linkedin, Facebook, Mail, Copy, CreditCard, ArrowRight, CheckCircle, Clock, Users, Target } from "lucide-react";
+import { useToast } from "@/hooks/use-toast";
+import { useState } from "react";
+import { PDFGenerator } from "@/utils/pdfGenerator";
+import { SocialSharing } from "@/utils/socialSharing";
+import { apiRequest } from "@/lib/queryClient";
 
 interface Step5Props {
   wizardData: any;
@@ -10,7 +19,17 @@ interface Step5Props {
 }
 
 export default function Step5FinalizeSimulate({ wizardData, onComplete }: Step5Props) {
-  // Mock calculation based on wizard data
+  const { toast } = useToast();
+  const [isExporting, setIsExporting] = useState(false);
+  const [isSharing, setIsSharing] = useState(false);
+  const [isGeneratingContract, setIsGeneratingContract] = useState(false);
+  const [shareDialog, setShareDialog] = useState(false);
+  const [contractDialog, setContractDialog] = useState(false);
+  const [sharedUrl, setSharedUrl] = useState('');
+  const [socialLinks, setSocialLinks] = useState<any>(null);
+  const [contractInfo, setContractInfo] = useState({ clientName: '', clientEmail: '' });
+  
+  // Real calculation based on wizard data
   const calculateCosts = () => {
     const baseAgentCost = (wizardData.step2?.agentCount || 3) * 15000;
     const complexityMultiplier = wizardData.step1?.complexity === "High" ? 1.5 : 
@@ -37,26 +56,228 @@ export default function Step5FinalizeSimulate({ wizardData, onComplete }: Step5P
   const costData = calculateCosts();
   const savings = costData.traditionalCost - costData.totalCost;
 
-  const handleExportReport = () => {
-    console.log("Exporting detailed cost report...");
-    // Mock export functionality
-    const reportData = {
-      summary: costData,
-      wizardData,
-      timestamp: new Date().toISOString()
-    };
-    console.log("Report data:", reportData);
-    alert("Cost estimation report exported successfully!");
+  const handleExportReport = async (type: 'summary' | 'detailed' = 'detailed') => {
+    try {
+      setIsExporting(true);
+      
+      // Create a mock cost estimate for PDF generation
+      const mockEstimate = {
+        id: `estimate_${Date.now()}`,
+        title: wizardData.step1?.selectedPreset?.title || 'Custom Workflow',
+        totalCost: costData.totalCost.toString(),
+        traditionalCost: costData.traditionalCost.toString(),
+        savingsAmount: savings.toString(),
+        savingsPercentage: (((costData.traditionalCost - costData.totalCost) / costData.traditionalCost) * 100).toString(),
+        agents: wizardData.step2?.selectedAgents || [],
+        workflow: wizardData.step1?.selectedPreset,
+        apiCalls: wizardData.step3?.apiCalls,
+        dataTransfer: wizardData.step3?.dataTransfer,
+        errorRate: wizardData.step3?.errorRate,
+        batchSize: wizardData.step3?.batchSize,
+        autoScale: wizardData.step3?.autoScale,
+        multiModel: wizardData.step3?.multiModel,
+        modelProvider: wizardData.step3?.modelProvider,
+        billingModel: wizardData.step4?.billingModel,
+        tier: wizardData.step4?.tier,
+        volumeDiscount: wizardData.step4?.volumeDiscount,
+        byoApiKeys: wizardData.step4?.byoApiKeys,
+        taxRate: String(wizardData.step4?.taxRate || '8.25'),
+        margin: String(wizardData.step4?.margin || '15'),
+        costBreakdown: costData.breakdown,
+        // Add required fields for CompleteCostEstimate type
+        workflowId: wizardData.step1?.selectedPreset?.id || null,
+        selectedWorkflow: wizardData.step1?.selectedPreset,
+        customComplexity: null,
+        customDuration: null,
+        customCategory: null,
+        selectedAgents: wizardData.step2?.selectedAgents,
+        agentCount: wizardData.step2?.agentCount || 3,
+        isCompleted: true,
+        createdAt: new Date(),
+        updatedAt: new Date()
+      } as any;
+      
+      if (type === 'summary') {
+        await PDFGenerator.generateSummaryPDF(mockEstimate);
+        toast({
+          title: "Success",
+          description: "Summary report exported successfully!",
+        });
+      } else {
+        await PDFGenerator.generateDetailedPDF(mockEstimate);
+        toast({
+          title: "Success",
+          description: "Detailed report exported successfully!",
+        });
+      }
+    } catch (error) {
+      console.error('Export error:', error);
+      toast({
+        title: "Error",
+        description: "Failed to export report. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsExporting(false);
+    }
   };
 
-  const handleShareResults = () => {
-    console.log("Sharing results...");
-    alert("Share link copied to clipboard!");
+  const handleShareResults = async () => {
+    try {
+      setIsSharing(true);
+      
+      // First create a cost estimate in the database
+      const estimateData = {
+        title: wizardData.step1?.selectedPreset?.title || 'Custom Workflow',
+        workflowId: wizardData.step1?.selectedPreset?.id,
+        selectedWorkflow: wizardData.step1?.selectedPreset,
+        selectedAgents: wizardData.step2?.selectedAgents,
+        agentCount: wizardData.step2?.agentCount || 3,
+        apiCalls: wizardData.step3?.apiCalls || 10000,
+        dataTransfer: wizardData.step3?.dataTransfer || 100,
+        errorRate: wizardData.step3?.errorRate || 2,
+        batchSize: wizardData.step3?.batchSize || 50,
+        autoScale: wizardData.step3?.autoScale || true,
+        multiModel: wizardData.step3?.multiModel || true,
+        modelProvider: wizardData.step3?.modelProvider || 'openai',
+        billingModel: wizardData.step4?.billingModel || 'hybrid',
+        tier: wizardData.step4?.tier || 'department',
+        volumeDiscount: wizardData.step4?.volumeDiscount || false,
+        byoApiKeys: wizardData.step4?.byoApiKeys || false,
+        taxRate: String(wizardData.step4?.taxRate || '8.25'),
+        margin: String(wizardData.step4?.margin || '15'),
+        totalCost: costData.totalCost.toString(),
+        traditionalCost: costData.traditionalCost.toString(),
+        savingsAmount: savings.toString(),
+        savingsPercentage: (((costData.traditionalCost - costData.totalCost) / costData.traditionalCost) * 100).toString(),
+        costBreakdown: costData.breakdown,
+        isCompleted: true
+      };
+      
+      // Create the cost estimate
+      const estimateResponse = await apiRequest('POST', '/api/cost-estimates', estimateData);
+      const estimate = await estimateResponse.json();
+      // Create shareable link
+      const shareData = {
+        estimateId: estimate.id,
+        title: `${wizardData.step1?.selectedPreset?.title || 'Custom Workflow'} - Cost Estimation`
+      };
+      
+      const shareResponse = await apiRequest('POST', '/api/share-results', shareData);
+      const response = await shareResponse.json();
+      
+      setSharedUrl(response.shareUrl);
+      setSocialLinks(response.socialLinks);
+      setShareDialog(true);
+      
+      toast({
+        title: "Success",
+        description: "Shareable link created successfully!",
+      });
+    } catch (error) {
+      console.error('Share error:', error);
+      toast({
+        title: "Error",
+        description: "Failed to create shareable link. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsSharing(false);
+    }
   };
 
   const handleGenerateContract = () => {
-    console.log("Generating service contract...");
-    alert("Service contract generated and ready for download!");
+    setContractDialog(true);
+  };
+  
+  const handleCreateContract = async () => {
+    try {
+      setIsGeneratingContract(true);
+      
+      // First create a cost estimate in the database
+      const estimateData = {
+        title: wizardData.step1?.selectedPreset?.title || 'Custom Workflow',
+        workflowId: wizardData.step1?.selectedPreset?.id,
+        selectedWorkflow: wizardData.step1?.selectedPreset,
+        selectedAgents: wizardData.step2?.selectedAgents,
+        agentCount: wizardData.step2?.agentCount || 3,
+        apiCalls: wizardData.step3?.apiCalls || 10000,
+        dataTransfer: wizardData.step3?.dataTransfer || 100,
+        errorRate: wizardData.step3?.errorRate || 2,
+        batchSize: wizardData.step3?.batchSize || 50,
+        autoScale: wizardData.step3?.autoScale || true,
+        multiModel: wizardData.step3?.multiModel || true,
+        modelProvider: wizardData.step3?.modelProvider || 'openai',
+        billingModel: wizardData.step4?.billingModel || 'hybrid',
+        tier: wizardData.step4?.tier || 'department',
+        volumeDiscount: wizardData.step4?.volumeDiscount || false,
+        byoApiKeys: wizardData.step4?.byoApiKeys || false,
+        taxRate: String(wizardData.step4?.taxRate || '8.25'),
+        margin: String(wizardData.step4?.margin || '15'),
+        totalCost: costData.totalCost.toString(),
+        traditionalCost: costData.traditionalCost.toString(),
+        savingsAmount: savings.toString(),
+        savingsPercentage: (((costData.traditionalCost - costData.totalCost) / costData.traditionalCost) * 100).toString(),
+        costBreakdown: costData.breakdown,
+        isCompleted: true
+      };
+      
+      // Create the cost estimate
+      const estimateResponse = await apiRequest('POST', '/api/cost-estimates', estimateData);
+      const estimate = await estimateResponse.json();
+      
+      // Generate contract
+      const contractData = {
+        estimateId: estimate.id,
+        clientName: contractInfo.clientName,
+        clientEmail: contractInfo.clientEmail
+      };
+      
+      const contractResponse = await apiRequest('POST', '/api/generate-contract', contractData);
+      const contract = await contractResponse.json();
+      
+      // Create Stripe checkout session
+      const checkoutData = { contractId: contract.contract.id };
+      const checkoutResponse = await apiRequest('POST', '/api/create-checkout-session', checkoutData);
+      const checkout = await checkoutResponse.json();
+      
+      // Redirect to Stripe checkout
+      if (checkout.checkoutUrl) {
+        window.open(checkout.checkoutUrl, '_blank');
+        
+        toast({
+          title: "Success",
+          description: "Contract generated! Redirecting to secure payment...",
+        });
+        
+        setContractDialog(false);
+      }
+    } catch (error) {
+      console.error('Contract generation error:', error);
+      toast({
+        title: "Error",
+        description: "Failed to generate contract. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsGeneratingContract(false);
+    }
+  };
+  
+  const handleCopyUrl = async () => {
+    const success = await SocialSharing.copyToClipboard(sharedUrl);
+    if (success) {
+      toast({
+        title: "Copied!",
+        description: "Share URL copied to clipboard",
+      });
+    } else {
+      toast({
+        title: "Error",
+        description: "Failed to copy URL",
+        variant: "destructive",
+      });
+    }
   };
 
   return (
@@ -141,35 +362,300 @@ export default function Step5FinalizeSimulate({ wizardData, onComplete }: Step5P
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
             <Button 
-              onClick={handleExportReport}
+              onClick={() => handleExportReport('summary')}
+              variant="outline"
               className="flex items-center gap-2"
-              data-testid="button-export-detailed-report"
+              disabled={isExporting}
+              data-testid="button-export-report"
             >
               <FileText className="h-4 w-4" />
-              Export Detailed Report
+              {isExporting ? 'Exporting...' : 'Export Report'}
             </Button>
             
+            <Button 
+              onClick={() => handleExportReport('detailed')}
+              className="flex items-center gap-2"
+              disabled={isExporting}
+              data-testid="button-export-detailed-report"
+            >
+              <Download className="h-4 w-4" />
+              {isExporting ? 'Exporting...' : 'Export Detailed Report'}
+            </Button>
+          </div>
+          
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <Button 
               variant="outline"
               onClick={handleShareResults}
               className="flex items-center gap-2"
+              disabled={isSharing}
               data-testid="button-share-results"
             >
               <Share2 className="h-4 w-4" />
-              Share Results
+              {isSharing ? 'Creating Link...' : 'Share Results'}
             </Button>
+
+            <Dialog open={shareDialog} onOpenChange={setShareDialog}>
+              <DialogContent className="sm:max-w-md">
+                <DialogHeader>
+                  <DialogTitle>Share Your Results</DialogTitle>
+                  <DialogDescription>
+                    Share your cost estimation with others via link or social media
+                  </DialogDescription>
+                </DialogHeader>
+                <div className="space-y-4">
+                  {sharedUrl && (
+                    <>
+                      <div className="space-y-2">
+                        <Label>Share URL</Label>
+                        <div className="flex items-center gap-2">
+                          <Input value={sharedUrl} readOnly className="flex-1" />
+                          <Button size="sm" onClick={handleCopyUrl}>
+                            <Copy className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      </div>
+                      
+                      <Separator />
+                      
+                      <div className="space-y-2">
+                        <Label>Share on Social Media</Label>
+                        <div className="grid grid-cols-2 gap-2">
+                          {socialLinks && (
+                            <>
+                              <Button 
+                                variant="outline" 
+                                size="sm"
+                                onClick={() => SocialSharing.openShareWindow(socialLinks.twitter, 'twitter')}
+                                className="flex items-center gap-2"
+                              >
+                                <Twitter className="h-4 w-4" />
+                                Twitter
+                              </Button>
+                              <Button 
+                                variant="outline" 
+                                size="sm"
+                                onClick={() => SocialSharing.openShareWindow(socialLinks.linkedin, 'linkedin')}
+                                className="flex items-center gap-2"
+                              >
+                                <Linkedin className="h-4 w-4" />
+                                LinkedIn
+                              </Button>
+                              <Button 
+                                variant="outline" 
+                                size="sm"
+                                onClick={() => SocialSharing.openShareWindow(socialLinks.facebook, 'facebook')}
+                                className="flex items-center gap-2"
+                              >
+                                <Facebook className="h-4 w-4" />
+                                Facebook
+                              </Button>
+                              <Button 
+                                variant="outline" 
+                                size="sm"
+                                onClick={() => SocialSharing.openShareWindow(socialLinks.email, 'email')}
+                                className="flex items-center gap-2"
+                              >
+                                <Mail className="h-4 w-4" />
+                                Email
+                              </Button>
+                            </>
+                          )}
+                        </div>
+                      </div>
+                    </>
+                  )}
+                </div>
+              </DialogContent>
+            </Dialog>
             
-            <Button 
-              variant="outline"
-              onClick={handleGenerateContract}
-              className="flex items-center gap-2"
-              data-testid="button-generate-contract"
-            >
-              <Download className="h-4 w-4" />
-              Generate Contract
-            </Button>
+            <Dialog open={contractDialog} onOpenChange={setContractDialog}>
+              <DialogTrigger asChild>
+                <Button 
+                  onClick={handleGenerateContract}
+                  className="flex items-center gap-2"
+                  data-testid="button-generate-contract"
+                >
+                  <CreditCard className="h-4 w-4" />
+                  Generate Contract
+                </Button>
+              </DialogTrigger>
+              <DialogContent>
+                <DialogHeader>
+                  <DialogTitle>Generate Service Contract</DialogTitle>
+                  <DialogDescription>
+                    Create a contract and proceed to secure payment processing
+                  </DialogDescription>
+                </DialogHeader>
+                <div className="space-y-4">
+                  <div className="grid grid-cols-1 gap-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="clientName">Client Name *</Label>
+                      <Input
+                        id="clientName"
+                        value={contractInfo.clientName}
+                        onChange={(e) => setContractInfo(prev => ({ ...prev, clientName: e.target.value }))}
+                        placeholder="Enter client or company name"
+                        required
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="clientEmail">Email Address *</Label>
+                      <Input
+                        id="clientEmail"
+                        type="email"
+                        value={contractInfo.clientEmail}
+                        onChange={(e) => setContractInfo(prev => ({ ...prev, clientEmail: e.target.value }))}
+                        placeholder="Enter email address"
+                        required
+                      />
+                    </div>
+                  </div>
+                  
+                  <div className="bg-muted/50 p-4 rounded-lg">
+                    <div className="space-y-2">
+                      <div className="font-medium">Contract Summary</div>
+                      <div className="text-sm text-muted-foreground space-y-1">
+                        <div>Service: {wizardData.step1?.selectedPreset?.title || 'Custom Workflow'} Implementation</div>
+                        <div>Total Amount: ${costData.totalCost.toLocaleString()}</div>
+                        <div>Payment: Secure processing via Stripe</div>
+                      </div>
+                    </div>
+                  </div>
+                  
+                  <Button 
+                    onClick={handleCreateContract}
+                    disabled={!contractInfo.clientName || !contractInfo.clientEmail || isGeneratingContract}
+                    className="w-full flex items-center gap-2"
+                  >
+                    <ArrowRight className="h-4 w-4" />
+                    {isGeneratingContract ? 'Processing...' : 'Proceed to Secure Payment'}
+                  </Button>
+                </div>
+              </DialogContent>
+            </Dialog>
+          </div>
+        </CardContent>
+      </Card>
+      
+      {/* Implementation Process Visualization */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Implementation Process</CardTitle>
+          <CardDescription>
+            Your next steps after contract signature
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="space-y-6">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              <div className="flex items-start space-x-3">
+                <div className="flex-shrink-0 w-8 h-8 bg-primary rounded-full flex items-center justify-center text-white font-medium text-sm">
+                  1
+                </div>
+                <div className="space-y-1">
+                  <div className="font-medium">Setup & Configuration</div>
+                  <div className="text-sm text-muted-foreground">
+                    Configure your selected AI agents and integrate with your existing systems
+                  </div>
+                  <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                    <Clock className="h-3 w-3" />
+                    1-2 weeks
+                  </div>
+                </div>
+              </div>
+              
+              <div className="flex items-start space-x-3">
+                <div className="flex-shrink-0 w-8 h-8 bg-primary rounded-full flex items-center justify-center text-white font-medium text-sm">
+                  2
+                </div>
+                <div className="space-y-1">
+                  <div className="font-medium">Testing & Optimization</div>
+                  <div className="text-sm text-muted-foreground">
+                    Run pilot processes and optimize performance based on your specific workflows
+                  </div>
+                  <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                    <Target className="h-3 w-3" />
+                    2-3 weeks
+                  </div>
+                </div>
+              </div>
+              
+              <div className="flex items-start space-x-3">
+                <div className="flex-shrink-0 w-8 h-8 bg-primary rounded-full flex items-center justify-center text-white font-medium text-sm">
+                  3
+                </div>
+                <div className="space-y-1">
+                  <div className="font-medium">Full Deployment</div>
+                  <div className="text-sm text-muted-foreground">
+                    Go live with your AI-powered workflow and start realizing cost savings
+                  </div>
+                  <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                    <CheckCircle className="h-3 w-3" />
+                    1 week
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+      
+      {/* User Follow-up Steps */}
+      <Card className="bg-gradient-to-r from-chart-3/5 to-chart-3/10 border-chart-3/20">
+        <CardHeader>
+          <CardTitle className="text-chart-3">Your Follow-Up Action Items</CardTitle>
+          <CardDescription>
+            Maximize your investment with these recommended next steps
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="space-y-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className="space-y-3">
+                <div className="font-medium flex items-center gap-2">
+                  <Users className="h-4 w-4 text-chart-3" />
+                  Team Preparation
+                </div>
+                <ul className="space-y-2 text-sm text-muted-foreground">
+                  <li className="flex items-start gap-2">
+                    <span className="block w-1 h-1 rounded-full bg-chart-3 mt-2 flex-shrink-0"></span>
+                    Identify team members who will work with the AI agents
+                  </li>
+                  <li className="flex items-start gap-2">
+                    <span className="block w-1 h-1 rounded-full bg-chart-3 mt-2 flex-shrink-0"></span>
+                    Schedule training sessions for new workflows
+                  </li>
+                  <li className="flex items-start gap-2">
+                    <span className="block w-1 h-1 rounded-full bg-chart-3 mt-2 flex-shrink-0"></span>
+                    Define success metrics and KPIs
+                  </li>
+                </ul>
+              </div>
+              
+              <div className="space-y-3">
+                <div className="font-medium flex items-center gap-2">
+                  <Target className="h-4 w-4 text-chart-3" />
+                  Infrastructure
+                </div>
+                <ul className="space-y-2 text-sm text-muted-foreground">
+                  <li className="flex items-start gap-2">
+                    <span className="block w-1 h-1 rounded-full bg-chart-3 mt-2 flex-shrink-0"></span>
+                    Review API access and security requirements
+                  </li>
+                  <li className="flex items-start gap-2">
+                    <span className="block w-1 h-1 rounded-full bg-chart-3 mt-2 flex-shrink-0"></span>
+                    Prepare data sources and integrations
+                  </li>
+                  <li className="flex items-start gap-2">
+                    <span className="block w-1 h-1 rounded-full bg-chart-3 mt-2 flex-shrink-0"></span>
+                    Plan rollback procedures for risk management
+                  </li>
+                </ul>
+              </div>
+            </div>
           </div>
         </CardContent>
       </Card>

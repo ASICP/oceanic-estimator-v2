@@ -36,13 +36,22 @@ export default function Step1DefineWorkflow({ onDataChange }: Step1Props) {
   };
 
   const handleCustomChange = () => {
-    onDataChange({
-      selectedPreset: null,
-      complexity: customComplexity[0],
-      duration: customDuration,
-      category: taskCategory
-    });
+    if (taskCategory && customDuration) {
+      onDataChange({
+        selectedPreset: null,
+        customComplexity: customComplexity[0],
+        customDuration: customDuration,
+        customCategory: taskCategory
+      });
+    }
   };
+
+  // Call handleCustomChange when custom fields change, but only if no preset is selected
+  useEffect(() => {
+    if (!selectedPreset && (taskCategory || customDuration)) {
+      handleCustomChange();
+    }
+  }, [customComplexity, customDuration, taskCategory, selectedPreset]);
 
   return (
     <div className="space-y-6">
