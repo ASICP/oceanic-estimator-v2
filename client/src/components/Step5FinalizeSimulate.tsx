@@ -479,7 +479,7 @@ export default function Step5FinalizeSimulate({ wizardData, onComplete, onBack }
                 data-testid="button-generate-contract"
               >
                 <CreditCard className="h-4 w-4" />
-                Generate Contract
+                Proceed to Payment
               </Button>
             </div>
 
