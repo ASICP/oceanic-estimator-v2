@@ -213,6 +213,8 @@ export class MemStorage implements IStorage {
     const workflow: Workflow = {
       ...insertWorkflow,
       id,
+      isPreset: insertWorkflow.isPreset ?? false,
+      defaultAgentIds: insertWorkflow.defaultAgentIds ?? null,
       createdAt: new Date(),
       updatedAt: new Date()
     };
@@ -251,6 +253,10 @@ export class MemStorage implements IStorage {
     const agent: Agent = {
       ...insertAgent,
       id,
+      capabilities: insertAgent.capabilities ?? null,
+      avatarUrl: insertAgent.avatarUrl ?? null,
+      isRecommended: insertAgent.isRecommended ?? false,
+      baseCostPerHour: insertAgent.baseCostPerHour ?? null,
       createdAt: new Date()
     };
     this.agents.set(id, agent);
@@ -300,6 +306,20 @@ export class MemStorage implements IStorage {
     const estimate: CostEstimate = {
       ...insertEstimate,
       id,
+      workflowId: insertEstimate.workflowId ?? null,
+      selectedWorkflow: insertEstimate.selectedWorkflow ?? null,
+      customComplexity: insertEstimate.customComplexity ?? null,
+      customDuration: insertEstimate.customDuration ?? null,
+      customCategory: insertEstimate.customCategory ?? null,
+      selectedAgents: insertEstimate.selectedAgents ?? null,
+      autoScale: insertEstimate.autoScale ?? true,
+      multiModel: insertEstimate.multiModel ?? true,
+      volumeDiscount: insertEstimate.volumeDiscount ?? false,
+      byoApiKeys: insertEstimate.byoApiKeys ?? false,
+      taxRate: insertEstimate.taxRate ?? null,
+      margin: insertEstimate.margin ?? null,
+      costBreakdown: insertEstimate.costBreakdown ?? null,
+      isCompleted: insertEstimate.isCompleted ?? false,
       createdAt: new Date(),
       updatedAt: new Date()
     };
@@ -328,7 +348,14 @@ export class MemStorage implements IStorage {
 
   async createCostBreakdownItem(insertItem: InsertCostBreakdownItem): Promise<CostBreakdownItem> {
     const id = randomUUID();
-    const item: CostBreakdownItem = { ...insertItem, id };
+    const item: CostBreakdownItem = { 
+      ...insertItem, 
+      id,
+      description: insertItem.description ?? null,
+      estimateId: insertItem.estimateId ?? null,
+      color: insertItem.color ?? null,
+      sortOrder: insertItem.sortOrder ?? 0
+    };
     this.costBreakdownItems.set(id, item);
     return item;
   }
@@ -357,7 +384,12 @@ export class MemStorage implements IStorage {
 
   async createPricingModel(insertModel: InsertPricingModel): Promise<PricingModel> {
     const id = randomUUID();
-    const model: PricingModel = { ...insertModel, id };
+    const model: PricingModel = { 
+      ...insertModel, 
+      id,
+      description: insertModel.description ?? null,
+      isActive: insertModel.isActive ?? true
+    };
     this.pricingModels.set(id, model);
     return model;
   }
