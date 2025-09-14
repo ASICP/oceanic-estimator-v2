@@ -13,7 +13,16 @@ import {
   type InsertSharedResult,
   type InsertContract
 } from "@shared/schema";
+import { 
+  requireAuth, 
+  requireCSRF, 
+  loginHandler, 
+  logoutHandler, 
+  getCurrentUser, 
+  generateApiToken 
+} from "./auth-middleware";
 import { CostCalculator, costCalculationSchema } from "./costCalculator";
+import { GitHubSync } from "./github-sync";
 
 // Initialize Stripe
 if (!process.env.STRIPE_SECRET_KEY) {
@@ -24,6 +33,12 @@ const stripe = new Stripe(process.env.STRIPE_SECRET_KEY, {
 });
 
 const router = Router();
+
+// Authentication routes
+router.post("/api/auth/login", loginHandler);
+router.post("/api/auth/logout", logoutHandler);
+router.get("/api/auth/user", getCurrentUser);
+router.post("/api/auth/token", generateApiToken);
 
 // Workflow routes
 router.get("/api/workflows", async (req, res) => {
@@ -640,6 +655,49 @@ router.post("/api/seed-database", async (req, res) => {
   } catch (error) {
     console.error("Error seeding database:", error);
     res.status(500).json({ error: "Failed to seed database" });
+  }
+});
+
+// GitHub integration routes - ALL PROTECTED
+router.get("/api/github/repositories", requireAuth, async (req, res) => {
+  try {
+    const repositories = await GitHubSync.getRepositories();
+    res.json(repositories);
+  } catch (error) {
+    console.error("Error fetching repositories:", error);
+    res.status(500).json({ error: "Failed to fetch repositories" });
+  }
+});
+
+router.post("/api/github/create-repository", requireAuth, requireCSRF, async (req, res) => {
+  try {
+    const { name, isPrivate = true } = req.body;
+    
+    if (!name) {
+      return res.status(400).json({ error: "Repository name is required" });
+    }
+    
+    const repoFullName = await GitHubSync.createRepository(name, isPrivate);
+    res.json({ repoFullName, message: "Repository created successfully" });
+  } catch (error: any) {
+    console.error("Error creating repository:", error);
+    res.status(500).json({ error: error.message || "Failed to create repository" });
+  }
+});
+
+router.post("/api/github/sync-files", requireAuth, requireCSRF, async (req, res) => {
+  try {
+    const { repoName, branch = 'main' } = req.body;
+    
+    if (!repoName) {
+      return res.status(400).json({ error: "Repository name is required" });
+    }
+    
+    await GitHubSync.syncFilesToRepo(repoName, branch);
+    res.json({ message: "Files synced successfully to GitHub repository" });
+  } catch (error: any) {
+    console.error("Error syncing files:", error);
+    res.status(500).json({ error: error.message || "Failed to sync files" });
   }
 });
 
