@@ -3,6 +3,19 @@ import html2canvas from 'html2canvas';
 import type { CompleteCostEstimate } from '@shared/schema';
 
 export class PDFGenerator {
+  // Helper function to wrap text for PDF
+  private static wrapText(doc: jsPDF, text: string, x: number, startY: number, maxWidth: number, lineHeight: number = 10): number {
+    const lines = doc.splitTextToSize(text, maxWidth);
+    let yPosition = startY;
+    
+    lines.forEach((line: string) => {
+      doc.text(line, x, yPosition);
+      yPosition += lineHeight;
+    });
+    
+    return yPosition;
+  }
+
   static async generateSummaryPDF(estimate: CompleteCostEstimate): Promise<void> {
     const doc = new jsPDF();
     
@@ -110,8 +123,8 @@ export class PDFGenerator {
       yPosition += 10;
       doc.text(`Duration: ${estimate.workflow.duration}`, 20, yPosition);
       yPosition += 10;
-      doc.text(`Description: ${estimate.workflow.description}`, 20, yPosition);
-      yPosition += 20;
+      yPosition = this.wrapText(doc, `Description: ${estimate.workflow.description}`, 20, yPosition, 170);
+      yPosition += 10;
     }
     
     // Agent Team Details
@@ -128,11 +141,9 @@ export class PDFGenerator {
         yPosition += 10;
         doc.text(`   Domain: ${agent.domain}`, 25, yPosition);
         yPosition += 8;
-        doc.text(`   Description: ${agent.description}`, 25, yPosition);
-        yPosition += 8;
+        yPosition = this.wrapText(doc, `   Description: ${agent.description}`, 25, yPosition, 165, 8);
         if (agent.capabilities && agent.capabilities.length > 0) {
-          doc.text(`   Capabilities: ${agent.capabilities.join(', ')}`, 25, yPosition);
-          yPosition += 8;
+          yPosition = this.wrapText(doc, `   Capabilities: ${agent.capabilities.join(', ')}`, 25, yPosition, 165, 8);
         }
         yPosition += 5;
       });
@@ -204,6 +215,141 @@ export class PDFGenerator {
     }
     
     const fileName = `cost_estimate_detailed_${Date.now()}.pdf`;
+    doc.save(fileName);
+  }
+
+  static async generateGenericContract(estimate: CompleteCostEstimate): Promise<void> {
+    const doc = new jsPDF();
+    let yPosition = 30;
+    
+    // Helper function to add new page if needed
+    const checkPageBreak = (requiredSpace: number) => {
+      if (yPosition + requiredSpace > 280) {
+        doc.addPage();
+        yPosition = 30;
+      }
+    };
+    
+    // Header
+    doc.setFontSize(20);
+    doc.text('AI Agent Development Service Agreement', 20, yPosition);
+    yPosition += 20;
+    
+    doc.setFontSize(12);
+    doc.text(`Date: ${new Date().toLocaleDateString()}`, 20, yPosition);
+    yPosition += 10;
+    doc.text(`Project: ${estimate.title || 'Unnamed Project'}`, 20, yPosition);
+    yPosition += 20;
+    
+    // Parties Section
+    checkPageBreak(40);
+    doc.setFontSize(16);
+    doc.text('1. PARTIES', 20, yPosition);
+    yPosition += 10;
+    doc.setFontSize(12);
+    
+    yPosition = this.wrapText(doc, 'This Service Agreement ("Agreement") is entered into between Esteemed Ventures ("Service Provider") and the Client for the development and implementation of AI agent solutions.', 20, yPosition, 170);
+    yPosition += 15;
+    
+    // Scope of Work
+    checkPageBreak(80);
+    doc.setFontSize(16);
+    doc.text('2. SCOPE OF WORK', 20, yPosition);
+    yPosition += 10;
+    doc.setFontSize(12);
+    
+    const totalCost = parseFloat(estimate.totalCost?.toString() || '0');
+    const savingsPercent = parseFloat(estimate.savingsPercentage?.toString() || '0');
+    
+    yPosition = this.wrapText(doc, `Service Provider agrees to develop and implement an AI agent solution for ${estimate.title || 'the specified workflow'} with the following specifications:`, 20, yPosition, 170);
+    yPosition += 10;
+    
+    if (estimate.agents && estimate.agents.length > 0) {
+      doc.text('Agent Configuration:', 20, yPosition);
+      yPosition += 8;
+      estimate.agents.forEach((agent: any) => {
+        checkPageBreak(15);
+        yPosition = this.wrapText(doc, `• ${agent.name} - ${agent.role}: ${agent.description}`, 25, yPosition, 165, 8);
+        yPosition += 5;
+      });
+      yPosition += 10;
+    }
+    
+    doc.text('Technical Specifications:', 20, yPosition);
+    yPosition += 8;
+    doc.text(`• API Calls: ${estimate.apiCalls?.toLocaleString() || 'TBD'} per month`, 25, yPosition);
+    yPosition += 8;
+    doc.text(`• Data Processing: ${estimate.dataTransfer || 'TBD'} GB capacity`, 25, yPosition);
+    yPosition += 8;
+    doc.text(`• Error Rate Target: <${estimate.errorRate || '2'}%`, 25, yPosition);
+    yPosition += 8;
+    doc.text(`• Billing Model: ${estimate.billingModel || 'Hybrid'}`, 25, yPosition);
+    yPosition += 15;
+    
+    // Project Cost and Timeline
+    checkPageBreak(60);
+    doc.setFontSize(16);
+    doc.text('3. PROJECT COST AND TIMELINE', 20, yPosition);
+    yPosition += 10;
+    doc.setFontSize(12);
+    
+    doc.text(`Total Project Cost: $${totalCost.toLocaleString()}`, 20, yPosition);
+    yPosition += 10;
+    yPosition = this.wrapText(doc, `This AI-powered solution delivers approximately ${savingsPercent}% cost savings compared to traditional development approaches.`, 20, yPosition, 170);
+    yPosition += 15;
+    
+    yPosition = this.wrapText(doc, 'Implementation Timeline: 3 phases over 6-12 weeks', 20, yPosition, 170);
+    yPosition += 8;
+    doc.text('• Phase 1: Setup & Configuration (1-2 weeks)', 25, yPosition);
+    yPosition += 8;
+    doc.text('• Phase 2: Testing & Optimization (2-3 weeks)', 25, yPosition);
+    yPosition += 8;
+    doc.text('• Phase 3: Full Deployment (1 week)', 25, yPosition);
+    yPosition += 20;
+    
+    // Terms and Conditions
+    checkPageBreak(100);
+    doc.setFontSize(16);
+    doc.text('4. TERMS AND CONDITIONS', 20, yPosition);
+    yPosition += 10;
+    doc.setFontSize(12);
+    
+    const terms = [
+      'Payment Terms: 50% upfront, 50% upon project completion and acceptance.',
+      'Intellectual Property: Client retains ownership of custom workflows and configurations. Esteemed Ventures retains ownership of underlying AI agent framework and methodology.',
+      'Support: 30 days of post-implementation support included. Extended support available separately.',
+      'Confidentiality: Both parties agree to maintain confidentiality of proprietary information.',
+      'Warranty: Service Provider warrants that the delivered solution will perform substantially as specified for 90 days from delivery.',
+      'Limitation of Liability: Service Provider\'s liability shall not exceed the total contract value.'
+    ];
+    
+    terms.forEach((term, index) => {
+      checkPageBreak(25);
+      yPosition = this.wrapText(doc, `${index + 1}. ${term}`, 20, yPosition, 170);
+      yPosition += 10;
+    });
+    
+    // Signatures
+    checkPageBreak(60);
+    doc.setFontSize(16);
+    doc.text('5. SIGNATURES', 20, yPosition);
+    yPosition += 20;
+    doc.setFontSize(12);
+    
+    doc.text('Esteemed Ventures:', 20, yPosition);
+    yPosition += 20;
+    doc.text('Signature: _________________________', 20, yPosition);
+    yPosition += 10;
+    doc.text('Date: _____________', 20, yPosition);
+    yPosition += 25;
+    
+    doc.text('Client:', 20, yPosition);
+    yPosition += 20;
+    doc.text('Signature: _________________________', 20, yPosition);
+    yPosition += 10;
+    doc.text('Date: _____________', 20, yPosition);
+    
+    const fileName = `ai_agent_contract_${Date.now()}.pdf`;
     doc.save(fileName);
   }
   

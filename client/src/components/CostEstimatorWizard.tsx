@@ -145,6 +145,7 @@ export default function CostEstimatorWizard() {
             <Step5FinalizeSimulate 
               wizardData={wizardData}
               onComplete={handleComplete}
+              onBack={handleBack}
             />
           )}
 

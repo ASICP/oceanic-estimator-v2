@@ -16,9 +16,10 @@ import { apiRequest } from "@/lib/queryClient";
 interface Step5Props {
   wizardData: any;
   onComplete: () => void;
+  onBack?: () => void;
 }
 
-export default function Step5FinalizeSimulate({ wizardData, onComplete }: Step5Props) {
+export default function Step5FinalizeSimulate({ wizardData, onComplete, onBack }: Step5Props) {
   const { toast } = useToast();
   const [isExporting, setIsExporting] = useState(false);
   const [isSharing, setIsSharing] = useState(false);
@@ -189,6 +190,65 @@ export default function Step5FinalizeSimulate({ wizardData, onComplete }: Step5P
   const handleGenerateContract = () => {
     setContractDialog(true);
   };
+
+  const handleDownloadGenericContract = async () => {
+    try {
+      setIsGeneratingContract(true);
+      
+      // Create a mock cost estimate for contract generation
+      const mockEstimate = {
+        id: `contract_${Date.now()}`,
+        title: wizardData.step1?.selectedPreset?.title || 'Custom Workflow',
+        totalCost: costData.totalCost.toString(),
+        traditionalCost: costData.traditionalCost.toString(),
+        savingsAmount: savings.toString(),
+        savingsPercentage: (((costData.traditionalCost - costData.totalCost) / costData.traditionalCost) * 100).toString(),
+        agents: wizardData.step2?.selectedAgents || [],
+        workflow: wizardData.step1?.selectedPreset,
+        apiCalls: wizardData.step3?.apiCalls,
+        dataTransfer: wizardData.step3?.dataTransfer,
+        errorRate: wizardData.step3?.errorRate,
+        batchSize: wizardData.step3?.batchSize,
+        autoScale: wizardData.step3?.autoScale,
+        multiModel: wizardData.step3?.multiModel,
+        modelProvider: wizardData.step3?.modelProvider,
+        billingModel: wizardData.step4?.billingModel,
+        tier: wizardData.step4?.tier,
+        volumeDiscount: wizardData.step4?.volumeDiscount,
+        byoApiKeys: wizardData.step4?.byoApiKeys,
+        taxRate: String(wizardData.step4?.taxRate || '8.25'),
+        margin: String(wizardData.step4?.margin || '15'),
+        costBreakdown: costData.breakdown,
+        // Add required fields for CompleteCostEstimate type
+        workflowId: wizardData.step1?.selectedPreset?.id || null,
+        selectedWorkflow: wizardData.step1?.selectedPreset,
+        customComplexity: null,
+        customDuration: null,
+        customCategory: null,
+        selectedAgents: wizardData.step2?.selectedAgents,
+        agentCount: wizardData.step2?.agentCount || 3,
+        isCompleted: true,
+        createdAt: new Date(),
+        updatedAt: new Date()
+      } as any;
+      
+      await PDFGenerator.generateGenericContract(mockEstimate);
+      
+      toast({
+        title: "Success",
+        description: "Generic contract downloaded successfully!",
+      });
+    } catch (error) {
+      console.error('Contract download error:', error);
+      toast({
+        title: "Error",
+        description: "Failed to download contract. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsGeneratingContract(false);
+    }
+  };
   
   const handleCreateContract = async () => {
     try {
@@ -289,6 +349,21 @@ export default function Step5FinalizeSimulate({ wizardData, onComplete }: Step5P
         </p>
       </div>
 
+      {/* Back Navigation */}
+      {onBack && (
+        <div className="flex justify-start">
+          <Button 
+            variant="outline" 
+            onClick={onBack}
+            className="flex items-center gap-2"
+            data-testid="button-back"
+          >
+            <ArrowRight className="h-4 w-4 rotate-180" />
+            Back to Previous Step
+          </Button>
+        </div>
+      )}
+
       {/* Executive Summary */}
       <Card className="bg-gradient-to-r from-primary/5 to-primary/10 border-primary/20">
         <CardHeader>
@@ -385,17 +460,41 @@ export default function Step5FinalizeSimulate({ wizardData, onComplete }: Step5P
             </Button>
           </div>
           
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <Button 
-              variant="outline"
-              onClick={handleShareResults}
-              className="flex items-center gap-2"
-              disabled={isSharing}
-              data-testid="button-share-results"
-            >
-              <Share2 className="h-4 w-4" />
-              {isSharing ? 'Creating Link...' : 'Share Results'}
-            </Button>
+          <div className="space-y-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <Button 
+                variant="outline"
+                onClick={handleShareResults}
+                className="flex items-center gap-2"
+                disabled={isSharing}
+                data-testid="button-share-results"
+              >
+                <Share2 className="h-4 w-4" />
+                {isSharing ? 'Creating Link...' : 'Share Results'}
+              </Button>
+
+              <Button 
+                onClick={handleGenerateContract}
+                className="flex items-center gap-2"
+                data-testid="button-generate-contract"
+              >
+                <CreditCard className="h-4 w-4" />
+                Generate Contract
+              </Button>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <Button 
+                variant="outline"
+                onClick={handleDownloadGenericContract}
+                className="flex items-center gap-2"
+                disabled={isGeneratingContract}
+                data-testid="button-download-contract"
+              >
+                <FileText className="h-4 w-4" />
+                {isGeneratingContract ? 'Generating...' : 'Download Contract PDF'}
+              </Button>
+            </div>
 
             <Dialog open={shareDialog} onOpenChange={setShareDialog}>
               <DialogContent className="sm:max-w-md">
@@ -472,16 +571,6 @@ export default function Step5FinalizeSimulate({ wizardData, onComplete }: Step5P
             </Dialog>
             
             <Dialog open={contractDialog} onOpenChange={setContractDialog}>
-              <DialogTrigger asChild>
-                <Button 
-                  onClick={handleGenerateContract}
-                  className="flex items-center gap-2"
-                  data-testid="button-generate-contract"
-                >
-                  <CreditCard className="h-4 w-4" />
-                  Generate Contract
-                </Button>
-              </DialogTrigger>
               <DialogContent>
                 <DialogHeader>
                   <DialogTitle>Generate Service Contract</DialogTitle>
