@@ -10,6 +10,7 @@ import {
   insertCostBreakdownItemSchema,
   insertPricingModelSchema
 } from "@shared/schema";
+import { CostCalculator, costCalculationSchema } from "./costCalculator";
 
 const router = Router();
 
@@ -226,37 +227,7 @@ router.delete("/api/cost-estimates/:id", async (req, res) => {
   }
 });
 
-// Cost calculation engine
-const costCalculationSchema = z.object({
-  workflow: z.object({
-    complexity: z.string(),
-    duration: z.string(),
-    domain: z.string()
-  }),
-  agents: z.array(z.object({
-    id: z.string(),
-    name: z.string(),
-    role: z.string(),
-    baseCostPerHour: z.string().optional()
-  })),
-  resources: z.object({
-    apiCalls: z.number(),
-    dataTransfer: z.number(), 
-    errorRate: z.number(),
-    batchSize: z.number(),
-    modelProvider: z.string(),
-    autoScale: z.boolean(),
-    multiModel: z.boolean()
-  }),
-  billing: z.object({
-    model: z.string(),
-    tier: z.string(),
-    volumeDiscount: z.boolean(),
-    byoApiKeys: z.boolean(),
-    taxRate: z.number(),
-    margin: z.number()
-  })
-});
+// Enhanced cost calculation using the cost calculator engine
 
 router.post("/api/calculate-costs", async (req, res) => {
   try {
@@ -265,104 +236,8 @@ router.post("/api/calculate-costs", async (req, res) => {
       return res.status(400).json({ error: "Invalid calculation data", details: validation.error });
     }
     
-    const { workflow, agents, resources, billing } = validation.data;
-    
-    // Base calculation logic
-    const complexityMultiplier = {
-      "Low": 1.0,
-      "Medium": 1.2, 
-      "High": 1.5
-    }[workflow.complexity] || 1.2;
-    
-    const baseAgentCost = agents.length * 15000; // Base cost per agent
-    const apiCost = Math.floor(resources.apiCalls * agents.length * 0.02);
-    const dataCost = Math.floor(resources.dataTransfer * 0.1);
-    const retryMultiplier = 1 + (resources.errorRate / 100);
-    
-    // Apply model provider pricing
-    const modelMultiplier = {
-      "openai": 1.2,
-      "claude": 1.0,
-      "groq": 0.8,
-      "multi": 1.1
-    }[resources.modelProvider] || 1.0;
-    
-    let totalCost = Math.floor(
-      (baseAgentCost + apiCost + dataCost) * 
-      complexityMultiplier * 
-      retryMultiplier * 
-      modelMultiplier
-    );
-    
-    // Apply billing model adjustments
-    if (billing.model === "subscription") {
-      totalCost *= 0.85; // Subscription discount
-    } else if (billing.model === "hybrid") {
-      totalCost *= 0.9; // Hybrid discount
-    }
-    
-    // Apply volume discount
-    if (billing.volumeDiscount && agents.length >= 5) {
-      totalCost *= 0.9;
-    }
-    
-    // Apply BYO keys discount
-    if (billing.byoApiKeys) {
-      totalCost *= 0.7;
-    }
-    
-    // Calculate traditional cost (AI agents vs traditional staff)
-    const traditionalCost = totalCost * 2.8; // 65-70% savings typical
-    
-    // Add taxes and margin
-    const baseCost = totalCost;
-    const taxAmount = Math.floor(baseCost * (billing.taxRate / 100));
-    const marginAmount = Math.floor(baseCost * (billing.margin / 100));
-    totalCost = baseCost + taxAmount + marginAmount;
-    
-    const savings = traditionalCost - totalCost;
-    const savingsPercentage = Math.round((savings / traditionalCost) * 100);
-    
-    // Cost breakdown
-    const breakdown = [
-      {
-        category: "AI Agents",
-        cost: Math.floor(baseAgentCost * complexityMultiplier),
-        color: "hsl(var(--chart-1))"
-      },
-      {
-        category: "API Calls", 
-        cost: Math.floor(apiCost * modelMultiplier),
-        color: "hsl(var(--chart-2))"
-      },
-      {
-        category: "Data Transfer",
-        cost: dataCost,
-        color: "hsl(var(--chart-3))"
-      },
-      {
-        category: "Infrastructure",
-        cost: Math.floor(totalCost * 0.15),
-        color: "hsl(var(--chart-4))"
-      }
-    ];
-    
-    res.json({
-      totalCost,
-      traditionalCost,
-      savings,
-      savingsPercentage,
-      breakdown,
-      baseCost,
-      taxAmount,
-      marginAmount,
-      metadata: {
-        agentCount: agents.length,
-        complexityMultiplier,
-        retryMultiplier,
-        modelMultiplier
-      }
-    });
+    const result = CostCalculator.calculate(validation.data);
+    res.json(result);
   } catch (error) {
     console.error("Error calculating costs:", error);
     res.status(500).json({ error: "Failed to calculate costs" });
