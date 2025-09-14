@@ -148,8 +148,42 @@ export type CompleteWorkflow = Workflow & {
   defaultAgents?: Agent[];
 };
 
+// Shared Results table - for sharing cost estimates via public links
+export const sharedResults = pgTable("shared_results", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  estimateId: varchar("estimate_id").references(() => costEstimates.id).notNull(),
+  shareUrl: text("share_url").notNull().unique(),
+  title: text("title").notNull(),
+  isPublic: boolean("is_public").default(true),
+  expiresAt: timestamp("expires_at"),
+  viewCount: integer("view_count").default(0),
+  createdAt: timestamp("created_at").defaultNow()
+});
+
+// Contracts table - for generating sales contracts and invoices
+export const contracts = pgTable("contracts", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  estimateId: varchar("estimate_id").references(() => costEstimates.id).notNull(),
+  contractNumber: text("contract_number").notNull().unique(),
+  clientName: text("client_name"),
+  clientEmail: text("client_email"),
+  totalAmount: decimal("total_amount", { precision: 12, scale: 2 }).notNull(),
+  status: text("status").notNull().default("draft"), // draft, sent, paid, cancelled
+  stripePaymentIntentId: text("stripe_payment_intent_id"),
+  stripeCheckoutSessionId: text("stripe_checkout_session_id"),
+  paidAt: timestamp("paid_at"),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow()
+});
+
 export type CompleteCostEstimate = CostEstimate & {
   workflow?: Workflow;
   agents?: Agent[];
   breakdownItems?: CostBreakdownItem[];
 };
+
+export type SharedResult = typeof sharedResults.$inferSelect;
+export type InsertSharedResult = typeof sharedResults.$inferInsert;
+
+export type Contract = typeof contracts.$inferSelect;
+export type InsertContract = typeof contracts.$inferInsert;
