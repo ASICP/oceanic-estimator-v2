@@ -116,8 +116,9 @@ export default function Step5FinalizeSimulate({ wizardData, onComplete, onBack }
     };
   };
 
-  // Use the cost calculation from Step4 if available, otherwise fetch from API
+  // Use the cost calculation from Step4 if it has valid data, otherwise fetch from API
   const step4CostData = wizardData.step4?.costs;
+  const hasValidStep4Data = step4CostData && step4CostData.totalCost > 0;
   
   const { data: costCalculationResult, isLoading: isCalculating, error: calculationError } = useQuery({
     queryKey: ['cost-calculation', wizardData],
@@ -125,12 +126,12 @@ export default function Step5FinalizeSimulate({ wizardData, onComplete, onBack }
       const response = await apiRequest('POST', '/api/calculate-costs', getCostCalculationInput());
       return await response.json();
     },
-    enabled: !step4CostData && !!(wizardData.step1 && wizardData.step2 && wizardData.step3 && wizardData.step4 && agents),
+    enabled: !hasValidStep4Data && !!(wizardData.step1 && wizardData.step2 && wizardData.step3 && wizardData.step4 && agents),
     refetchOnWindowFocus: false
   });
 
-  // Use Step4 cost data first, then API result, then fallback
-  const costData = step4CostData || costCalculationResult || {
+  // Use Step4 cost data if valid, otherwise use API result, then fallback
+  const costData = (hasValidStep4Data ? step4CostData : costCalculationResult) || {
     totalCost: 0,
     traditionalCost: 0,
     breakdown: [],
