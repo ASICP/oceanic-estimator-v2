@@ -116,24 +116,33 @@ export default function Step5FinalizeSimulate({ wizardData, onComplete, onBack }
     };
   };
 
-  // Fetch real cost calculation from the API
+  // Use the cost calculation from Step4 if available, otherwise fetch from API
+  const step4CostData = wizardData.step4?.costs;
+  
   const { data: costCalculationResult, isLoading: isCalculating, error: calculationError } = useQuery({
     queryKey: ['cost-calculation', wizardData],
     queryFn: async () => {
       const response = await apiRequest('POST', '/api/calculate-costs', getCostCalculationInput());
       return await response.json();
     },
-    enabled: !!(wizardData.step1 && wizardData.step2 && wizardData.step3 && wizardData.step4 && agents),
+    enabled: !step4CostData && !!(wizardData.step1 && wizardData.step2 && wizardData.step3 && wizardData.step4 && agents),
     refetchOnWindowFocus: false
   });
 
-  // Use the real calculation result or provide fallback
-  const costData = costCalculationResult || {
+  // Use Step4 cost data first, then API result, then fallback
+  const costData = step4CostData || costCalculationResult || {
     totalCost: 0,
     traditionalCost: 0,
     breakdown: [],
     savings: 0,
-    savingsPercentage: 0
+    savingsPercentage: 0,
+    agentCost: 0,
+    apiCost: 0,
+    infrastructureCost: 0,
+    dataCost: 0,
+    baseCost: 0,
+    taxAmount: 0,
+    marginAmount: 0
   };
   const savings = costData.savings || (costData.traditionalCost - costData.totalCost);
 
