@@ -6,7 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
 import CostDashboard from "./CostDashboard";
-import { FileText, Download, Share2, Twitter, Linkedin, Facebook, Mail, Copy, CreditCard, ArrowRight, CheckCircle, Clock, Users, Target } from "lucide-react";
+import { FileText, Download, Share2, Twitter, Linkedin, Facebook, Mail, Copy, CreditCard, ArrowRight, CheckCircle, Clock, Users, Target, Calculator, TrendingDown } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
@@ -504,6 +504,86 @@ export default function Step5FinalizeSimulate({ wizardData, onComplete, onBack }
             <div className="text-center">
               <div className="text-2xl font-bold text-foreground">{wizardData.step2?.agentCount || 3}</div>
               <div className="text-sm text-muted-foreground">AI Agents</div>
+            </div>
+          </div>
+
+          {/* Technical Cost Breakdown */}
+          <div className="pt-4 border-t border-border">
+            <h4 className="font-medium mb-3 flex items-center gap-2">
+              <Calculator className="h-4 w-4" />
+              Technical Cost Breakdown
+            </h4>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+              <div className="space-y-2">
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">Agent Development:</span>
+                  <span className="font-medium">${(costData.agentCost || 0).toLocaleString()}</span>
+                </div>
+                <div className="flex justify-between text-xs text-muted-foreground ml-4">
+                  <span>({wizardData.step2?.agentCount || 3} agents × $150/hr × {wizardData.step1?.duration || "4-8 hrs"})</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">API Integration:</span>
+                  <span className="font-medium">${(costData.apiCost || 0).toLocaleString()}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">Infrastructure:</span>
+                  <span className="font-medium">${(costData.infrastructureCost || 0).toLocaleString()}</span>
+                </div>
+              </div>
+              <div className="space-y-2">
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">Data Processing:</span>
+                  <span className="font-medium">${(costData.dataCost || 0).toLocaleString()}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">Base Operational:</span>
+                  <span className="font-medium">${(costData.baseCost || 0).toLocaleString()}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">Tax & Margin:</span>
+                  <span className="font-medium">${((costData.taxAmount || 0) + (costData.marginAmount || 0)).toLocaleString()}</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Cost Savings Justification */}
+          <div className="pt-4 border-t border-border bg-chart-3/10 p-4 rounded-lg">
+            <h4 className="font-medium mb-3 flex items-center gap-2 text-chart-3">
+              <TrendingDown className="h-4 w-4" />
+              Cost Savings Justification
+            </h4>
+            <div className="space-y-2 text-sm">
+              <div className="flex justify-between">
+                <span className="text-muted-foreground">Traditional Implementation Cost:</span>
+                <span className="font-medium">${(costData.traditionalCost || 0).toLocaleString()}</span>
+              </div>
+              <div className="flex justify-between text-xs text-muted-foreground ml-4">
+                <span>(Manual processes, consultants at $300+/hr, longer timeline)</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-muted-foreground">AI-Powered Solution Cost:</span>
+                <span className="font-medium">${costData.totalCost.toLocaleString()}</span>
+              </div>
+              {wizardData.step4?.byoApiKeys && (
+                <div className="flex justify-between text-chart-3">
+                  <span>BYO API Keys Discount:</span>
+                  <span className="font-medium">-30% additional savings</span>
+                </div>
+              )}
+              {wizardData.step4?.volumeDiscount && wizardData.step2?.agentCount >= 5 && (
+                <div className="flex justify-between text-chart-3">
+                  <span>Volume Discount (5+ agents):</span>
+                  <span className="font-medium">-10% additional savings</span>
+                </div>
+              )}
+              <div className="border-t pt-2 font-bold text-chart-3">
+                <div className="flex justify-between">
+                  <span>Total Savings ({costData.savingsPercentage || 0}%):</span>
+                  <span>${savings.toLocaleString()}</span>
+                </div>
+              </div>
             </div>
           </div>
 
