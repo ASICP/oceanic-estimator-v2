@@ -9,6 +9,7 @@ import CostDashboard from "./CostDashboard";
 import { FileText, Download, Share2, Twitter, Linkedin, Facebook, Mail, Copy, CreditCard, ArrowRight, CheckCircle, Clock, Users, Target } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { PDFGenerator } from "@/utils/pdfGenerator";
 import { SocialSharing } from "@/utils/socialSharing";
 import { apiRequest } from "@/lib/queryClient";
@@ -30,32 +31,56 @@ export default function Step5FinalizeSimulate({ wizardData, onComplete, onBack }
   const [socialLinks, setSocialLinks] = useState<any>(null);
   const [contractInfo, setContractInfo] = useState({ clientName: '', clientEmail: '' });
   
-  // Real calculation based on wizard data
-  const calculateCosts = () => {
-    const baseAgentCost = (wizardData.step2?.agentCount || 3) * 15000;
-    const complexityMultiplier = wizardData.step1?.complexity === "High" ? 1.5 : 
-                                wizardData.step1?.complexity === "Medium" ? 1.2 : 1.0;
-    const apiCosts = Math.floor(baseAgentCost * 0.3);
-    const infrastructureCosts = Math.floor(baseAgentCost * 0.2);
-    const supportCosts = Math.floor(baseAgentCost * 0.1);
-    
-    const totalCost = Math.floor((baseAgentCost + apiCosts + infrastructureCosts + supportCosts) * complexityMultiplier);
-    const traditionalCost = totalCost * 2.8; // 65-70% savings
-    
+  // Transform wizard data into the format expected by the cost calculation API
+  const getCostCalculationInput = () => {
     return {
-      totalCost,
-      traditionalCost,
-      breakdown: [
-        { category: "AI Agents", cost: Math.floor(baseAgentCost * complexityMultiplier), color: "hsl(var(--chart-1))" },
-        { category: "API Calls", cost: Math.floor(apiCosts * complexityMultiplier), color: "hsl(var(--chart-2))" },
-        { category: "Infrastructure", cost: Math.floor(infrastructureCosts * complexityMultiplier), color: "hsl(var(--chart-3))" },
-        { category: "Support", cost: Math.floor(supportCosts * complexityMultiplier), color: "hsl(var(--chart-4))" }
-      ]
+      workflow: {
+        complexity: wizardData.step1?.complexity || "Medium",
+        duration: wizardData.step1?.selectedPreset?.estimatedTime || "4-8 hrs",
+        domain: wizardData.step1?.selectedPreset?.category || "General",
+        presetId: wizardData.step1?.selectedPreset?.id
+      },
+      agents: wizardData.step2?.selectedAgents || [],
+      resources: {
+        apiCalls: wizardData.step3?.apiCalls || 10000,
+        dataTransfer: wizardData.step3?.dataTransfer || 100,
+        errorRate: wizardData.step3?.errorRate || 2,
+        batchSize: wizardData.step3?.batchSize || 50,
+        modelProvider: wizardData.step3?.modelProvider || "openai",
+        autoScale: wizardData.step3?.autoScale || true,
+        multiModel: wizardData.step3?.multiModel || true
+      },
+      billing: {
+        model: wizardData.step4?.billingModel || "hybrid",
+        tier: wizardData.step4?.tier || "department",
+        volumeDiscount: wizardData.step4?.volumeDiscount || false,
+        byoApiKeys: wizardData.step4?.byoApiKeys || false,
+        taxRate: wizardData.step4?.taxRate || 8.25,
+        margin: wizardData.step4?.margin || 15
+      }
     };
   };
 
-  const costData = calculateCosts();
-  const savings = costData.traditionalCost - costData.totalCost;
+  // Fetch real cost calculation from the API
+  const { data: costCalculationResult, isLoading: isCalculating, error: calculationError } = useQuery({
+    queryKey: ['cost-calculation', wizardData],
+    queryFn: async () => {
+      const response = await apiRequest('POST', '/api/calculate-costs', getCostCalculationInput());
+      return await response.json();
+    },
+    enabled: !!(wizardData.step1 && wizardData.step2 && wizardData.step3 && wizardData.step4),
+    refetchOnWindowFocus: false
+  });
+
+  // Use the real calculation result or provide fallback
+  const costData = costCalculationResult || {
+    totalCost: 0,
+    traditionalCost: 0,
+    breakdown: [],
+    savings: 0,
+    savingsPercentage: 0
+  };
+  const savings = costData.savings || (costData.traditionalCost - costData.totalCost);
 
   const handleExportReport = async (type: 'summary' | 'detailed' = 'detailed') => {
     try {
@@ -339,6 +364,42 @@ export default function Step5FinalizeSimulate({ wizardData, onComplete, onBack }
       });
     }
   };
+
+  // Show loading state while calculating costs
+  if (isCalculating) {
+    return (
+      <div className="space-y-6">
+        <Card>
+          <CardContent className="p-8 text-center">
+            <div className="space-y-4">
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto"></div>
+              <div className="text-lg font-medium">Calculating Costs...</div>
+              <div className="text-sm text-muted-foreground">Using advanced AI cost modeling</div>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
+  // Show error state if calculation failed
+  if (calculationError) {
+    return (
+      <div className="space-y-6">
+        <Card>
+          <CardContent className="p-8 text-center">
+            <div className="space-y-4">
+              <div className="text-lg font-medium text-destructive">Calculation Error</div>
+              <div className="text-sm text-muted-foreground">Failed to calculate costs. Please try again.</div>
+              <Button onClick={() => window.location.reload()} variant="outline">
+                Retry Calculation
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
