@@ -13,6 +13,7 @@ import { useQuery } from "@tanstack/react-query";
 import { PDFGenerator } from "@/utils/pdfGenerator";
 import { SocialSharing } from "@/utils/socialSharing";
 import { apiRequest } from "@/lib/queryClient";
+import { useAgents } from "@/hooks/useAgents";
 
 interface Step5Props {
   wizardData: any;
@@ -22,6 +23,7 @@ interface Step5Props {
 
 export default function Step5FinalizeSimulate({ wizardData, onComplete, onBack }: Step5Props) {
   const { toast } = useToast();
+  const { agents } = useAgents(); // Get all agents for proper data transformation
   const [isExporting, setIsExporting] = useState(false);
   const [isSharing, setIsSharing] = useState(false);
   const [isGeneratingContract, setIsGeneratingContract] = useState(false);
@@ -33,6 +35,59 @@ export default function Step5FinalizeSimulate({ wizardData, onComplete, onBack }
   
   // Transform wizard data into the format expected by the cost calculation API
   const getCostCalculationInput = () => {
+    // Transform selected agents to ensure they have all required fields
+    const selectedAgents = wizardData.step2?.selectedAgents || [];
+    const transformedAgents = selectedAgents.map((agent: any) => {
+      // If agent is already a full object with required fields, use it as is
+      if (agent && typeof agent === 'object' && agent.id && agent.name && agent.role && agent.domain) {
+        const result: any = {
+          id: agent.id,
+          name: agent.name,
+          role: agent.role,
+          domain: agent.domain
+        };
+        // Only include baseCostPerHour if it exists - let backend use its default
+        if (agent.baseCostPerHour) {
+          result.baseCostPerHour = agent.baseCostPerHour;
+        }
+        return result;
+      }
+      
+      // If agent is just a string (name), try to find the full agent object
+      if (typeof agent === 'string' && agents) {
+        const fullAgent = agents.find(a => a.name === agent || a.id === agent);
+        if (fullAgent) {
+          const result: any = {
+            id: fullAgent.id,
+            name: fullAgent.name,
+            role: fullAgent.role,
+            domain: fullAgent.domain
+          };
+          // Only include baseCostPerHour if it exists - let backend use its default
+          if (fullAgent.baseCostPerHour) {
+            result.baseCostPerHour = fullAgent.baseCostPerHour;
+          }
+          return result;
+        }
+        
+        // Fallback for string agents - create minimal object, let backend handle pricing
+        return {
+          id: agent,
+          name: agent,
+          role: "General Agent",
+          domain: "General"
+        };
+      }
+      
+      // Fallback for unexpected formats - let backend handle pricing
+      return {
+        id: "unknown",
+        name: "Unknown Agent",
+        role: "General Agent", 
+        domain: "General"
+      };
+    });
+
     return {
       workflow: {
         complexity: wizardData.step1?.complexity || "Medium",
@@ -40,7 +95,7 @@ export default function Step5FinalizeSimulate({ wizardData, onComplete, onBack }
         domain: wizardData.step1?.selectedPreset?.category || "General",
         presetId: wizardData.step1?.selectedPreset?.id
       },
-      agents: wizardData.step2?.selectedAgents || [],
+      agents: transformedAgents,
       resources: {
         apiCalls: wizardData.step3?.apiCalls || 10000,
         dataTransfer: wizardData.step3?.dataTransfer || 100,
@@ -68,7 +123,7 @@ export default function Step5FinalizeSimulate({ wizardData, onComplete, onBack }
       const response = await apiRequest('POST', '/api/calculate-costs', getCostCalculationInput());
       return await response.json();
     },
-    enabled: !!(wizardData.step1 && wizardData.step2 && wizardData.step3 && wizardData.step4),
+    enabled: !!(wizardData.step1 && wizardData.step2 && wizardData.step3 && wizardData.step4 && agents),
     refetchOnWindowFocus: false
   });
 

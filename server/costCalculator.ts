@@ -284,17 +284,48 @@ export class CostCalculator {
       };
     });
 
-    // Agent count impact analysis
+    // Agent count impact analysis - calculate directly without recursion
     const agentCountImpact = [1, 3, 5, 7, 10].map(agentCount => {
-      const modifiedInput = { 
-        ...input, 
-        agents: Array(agentCount).fill(input.agents[0] || { id: "1", name: "Agent", role: "AI", domain: "General" })
-      };
-      const result = this.calculate(modifiedInput);
+      // Calculate costs directly for different agent counts to avoid recursion
+      const complexityMultiplier = this.COMPLEXITY_MULTIPLIERS[input.workflow.complexity];
+      const modelMultiplier = this.MODEL_MULTIPLIERS[input.resources.modelProvider as keyof typeof this.MODEL_MULTIPLIERS] || 1.0;
+      const billingMultiplier = this.BILLING_MULTIPLIERS[input.billing.model];
+      const retryMultiplier = 1 + (input.resources.errorRate / 100);
+      
+      // Calculate base costs with modified agent count
+      const hoursFromDuration = this.parseHoursFromDuration(input.workflow.duration);
+      const sampleAgent = input.agents[0] || { id: "1", name: "Agent", role: "AI", domain: "General", baseCostPerHour: undefined };
+      const hourlyRate = sampleAgent.baseCostPerHour ? 
+        parseFloat(sampleAgent.baseCostPerHour) : 
+        this.BASE_AGENT_COST_PER_HOUR;
+      
+      const agentCost = hourlyRate * hoursFromDuration * complexityMultiplier * agentCount;
+      const apiCost = Math.floor((input.resources.apiCalls * agentCount / 1000) * this.API_COST_PER_1K * modelMultiplier);
+      const dataCost = Math.floor(input.resources.dataTransfer * this.DATA_TRANSFER_COST_PER_MB);
+      const infrastructureCost = Math.floor(agentCost * 0.15);
+      
+      let totalOperationalCost = (agentCost + apiCost + dataCost + infrastructureCost) * 
+                                retryMultiplier * billingMultiplier;
+      
+      // Apply discounts
+      if (input.billing.volumeDiscount && agentCount >= 5) {
+        totalOperationalCost *= 0.9;
+      }
+      if (input.billing.byoApiKeys) {
+        totalOperationalCost *= 0.7;
+      }
+      
+      const finalBaseCost = Math.floor(totalOperationalCost);
+      const taxAmount = Math.floor(finalBaseCost * (input.billing.taxRate / 100));
+      const marginAmount = Math.floor(finalBaseCost * (input.billing.margin / 100));
+      const totalCost = finalBaseCost + taxAmount + marginAmount;
+      const traditionalCost = Math.floor(totalCost * this.TRADITIONAL_MULTIPLIER);
+      const savingsPercentage = Math.round(((traditionalCost - totalCost) / traditionalCost) * 100);
+      
       return {
         agentCount,
-        totalCost: result.totalCost,
-        savingsPercentage: result.savingsPercentage
+        totalCost,
+        savingsPercentage
       };
     });
 
