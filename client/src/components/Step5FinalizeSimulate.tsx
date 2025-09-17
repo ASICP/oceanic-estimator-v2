@@ -123,10 +123,14 @@ export default function Step5FinalizeSimulate({ wizardData, onComplete, onBack }
   const { data: costCalculationResult, isLoading: isCalculating, error: calculationError } = useQuery({
     queryKey: ['cost-calculation', wizardData],
     queryFn: async () => {
-      const response = await apiRequest('POST', '/api/calculate-costs', getCostCalculationInput());
-      return await response.json();
+      const input = getCostCalculationInput();
+      console.log('[Step5] Sending cost calculation request:', input);
+      const response = await apiRequest('POST', '/api/calculate-costs', input);
+      const result = await response.json();
+      console.log('[Step5] Cost calculation result:', result);
+      return result;
     },
-    enabled: !hasValidStep4Data && !!(wizardData.step1 && wizardData.step2 && wizardData.step3 && wizardData.step4 && agents),
+    enabled: (!hasValidStep4Data || step4CostData?.totalCost === 0) && !!(wizardData.step1 && wizardData.step2),
     refetchOnWindowFocus: false
   });
 

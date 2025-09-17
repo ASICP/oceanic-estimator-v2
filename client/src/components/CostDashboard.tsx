@@ -122,7 +122,10 @@ export default function CostDashboard({
                     ))}
                   </Pie>
                   <Tooltip 
-                    formatter={(value, name) => [`$${Number(value).toLocaleString()}`, name]}
+                    formatter={(value, name, props) => {
+                      const categoryName = props.payload?.category || name;
+                      return [`$${Number(value).toLocaleString()}`, categoryName];
+                    }}
                     contentStyle={{
                       backgroundColor: 'hsl(var(--background))',
                       border: '1px solid hsl(var(--border))',
@@ -131,6 +134,36 @@ export default function CostDashboard({
                   />
                 </PieChart>
               </ResponsiveContainer>
+            </div>
+            
+            {/* Complete Cost Breakdown List */}
+            <div className="mt-4 space-y-2">
+              <h4 className="text-sm font-medium text-muted-foreground">All Cost Components</h4>
+              <div className="grid grid-cols-1 gap-2">
+                {costBreakdown
+                  .slice()
+                  .sort((a, b) => b.cost - a.cost)
+                  .map((item, index) => (
+                    <div key={index} className="flex items-center justify-between py-1" data-testid={`row-cost-${item.category.toLowerCase().replace(/\s+/g, '-')}`}>
+                      <div className="flex items-center space-x-2">
+                        <div 
+                          className="w-3 h-3 rounded-full flex-shrink-0" 
+                          style={{ backgroundColor: item.color }}
+                          data-testid={`dot-cost-${item.category.toLowerCase().replace(/\s+/g, '-')}`}
+                        />
+                        <span className="text-xs text-foreground" data-testid={`text-cost-${item.category.toLowerCase().replace(/\s+/g, '-')}`}>{item.category}</span>
+                        {item.cost < 700 && (
+                          <Badge variant="outline" className="text-xs px-1 py-0" data-testid={`badge-under-700-${item.category.toLowerCase().replace(/\s+/g, '-')}`}>
+                            &lt;$700
+                          </Badge>
+                        )}
+                      </div>
+                      <span className="text-xs font-medium text-foreground" data-testid={`amount-cost-${item.category.toLowerCase().replace(/\s+/g, '-')}`}>
+                        ${item.cost.toLocaleString()}
+                      </span>
+                    </div>
+                  ))}
+              </div>
             </div>
           </CardContent>
         </Card>

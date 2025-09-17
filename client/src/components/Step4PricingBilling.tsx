@@ -106,10 +106,14 @@ export default function Step4PricingBilling({ onDataChange, wizardData }: Step4P
   const { data: costCalculationResult, isLoading: isCalculating, error: calculationError } = useQuery({
     queryKey: ['cost-calculation-step4', billingModel, tier, volumeDiscount, byoApiKeys, taxRate, margin, wizardData],
     queryFn: async () => {
-      const response = await apiRequest('POST', '/api/calculate-costs', getCostCalculationInput());
-      return await response.json();
+      const input = getCostCalculationInput();
+      console.log('[Step4] Sending cost calculation request:', input);
+      const response = await apiRequest('POST', '/api/calculate-costs', input);
+      const result = await response.json();
+      console.log('[Step4] Cost calculation result:', result);
+      return result;
     },
-    enabled: !!(wizardData?.step1 && wizardData?.step2 && wizardData?.step3),
+    enabled: !!(wizardData?.step1 && wizardData?.step2),
     refetchOnWindowFocus: false
   });
 
