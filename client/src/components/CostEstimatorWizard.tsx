@@ -136,8 +136,7 @@ export default function CostEstimatorWizard() {
           {currentStep === 4 && (
             <Step4PricingBilling 
               onDataChange={(data) => handleStepData(4, data)}
-              agentCount={wizardData.step2?.agentCount || 3}
-              resourceCost={wizardData.step3?.estimatedCost || 15000}
+              wizardData={wizardData}
             />
           )}
           

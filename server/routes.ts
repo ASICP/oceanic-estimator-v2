@@ -257,15 +257,20 @@ router.delete("/api/cost-estimates/:id", async (req, res) => {
 
 router.post("/api/calculate-costs", async (req, res) => {
   try {
+    console.log('[COST_DEBUG] Received request:', JSON.stringify(req.body, null, 2));
+    
     const validation = costCalculationSchema.safeParse(req.body);
     if (!validation.success) {
+      console.log('[COST_DEBUG] Validation failed:', validation.error);
       return res.status(400).json({ error: "Invalid calculation data", details: validation.error });
     }
     
+    console.log('[COST_DEBUG] Validation passed, calculating...');
     const result = CostCalculator.calculate(validation.data);
+    console.log('[COST_DEBUG] Calculation result:', JSON.stringify(result, null, 2));
     res.json(result);
   } catch (error) {
-    console.error("Error calculating costs:", error);
+    console.error("[COST_DEBUG] Error calculating costs:", error);
     res.status(500).json({ error: "Failed to calculate costs" });
   }
 });
