@@ -106,15 +106,29 @@ export default function CostDashboard({
                     data={costBreakdown}
                     cx="50%"
                     cy="50%"
-                    outerRadius={80}
+                    outerRadius={60}
+                    innerRadius={20}
                     dataKey="cost"
-                    label={({ category, cost }) => `${category}: $${cost.toLocaleString()}`}
+                    label={({ category, cost, percent, x, y }) => {
+                      // Only show labels for slices larger than 5% to avoid overcrowding
+                      if (percent < 0.05) return '';
+                      return `${category}: $${cost.toLocaleString()}`;
+                    }}
+                    labelLine={false}
+                    fill="#8884d8"
                   >
                     {costBreakdown.map((entry, index) => (
                       <Cell key={`cell-${index}`} fill={entry.color} />
                     ))}
                   </Pie>
-                  <Tooltip />
+                  <Tooltip 
+                    formatter={(value, name) => [`$${Number(value).toLocaleString()}`, name]}
+                    contentStyle={{
+                      backgroundColor: 'hsl(var(--background))',
+                      border: '1px solid hsl(var(--border))',
+                      borderRadius: '6px'
+                    }}
+                  />
                 </PieChart>
               </ResponsiveContainer>
             </div>
