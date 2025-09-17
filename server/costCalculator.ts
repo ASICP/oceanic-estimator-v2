@@ -48,6 +48,11 @@ export interface CostCalculationResult {
   baseCost: number;
   taxAmount: number;
   marginAmount: number;
+  // Individual cost components for frontend breakdown display
+  agentCost: number;
+  apiCost: number;
+  dataCost: number;
+  infrastructureCost: number;
   metadata: {
     agentCount: number;
     complexityMultiplier: number;
@@ -193,6 +198,15 @@ export class CostCalculator {
       baseCost,
       taxAmount,
       marginAmount,
+      // Individual cost components for frontend breakdown display
+      agentCost: Math.floor(agentCost * complexityMultiplier * retryMultiplier * billingMultiplier * 
+                            (volumeDiscountApplied ? 0.9 : 1) * (byoKeysDiscountApplied ? 0.7 : 1)),
+      apiCost: Math.floor(apiCost * modelMultiplier * retryMultiplier * billingMultiplier * 
+                          (volumeDiscountApplied ? 0.9 : 1) * (byoKeysDiscountApplied ? 0.7 : 1)),
+      dataCost: Math.floor(dataCost * retryMultiplier * billingMultiplier * 
+                           (volumeDiscountApplied ? 0.9 : 1) * (byoKeysDiscountApplied ? 0.7 : 1)),
+      infrastructureCost: Math.floor(infrastructureCost * retryMultiplier * billingMultiplier * 
+                                     (volumeDiscountApplied ? 0.9 : 1) * (byoKeysDiscountApplied ? 0.7 : 1)),
       metadata: {
         agentCount: agents.length,
         complexityMultiplier,
