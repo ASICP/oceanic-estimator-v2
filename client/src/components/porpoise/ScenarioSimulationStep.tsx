@@ -231,14 +231,47 @@ export default function ScenarioSimulationStep({ formData, viewMode }: ScenarioS
   const scalingData = generateScalingData();
   const migrationCost = calculateMigrationCost();
   
+  const [isSaving, setIsSaving] = useState(false);
+  const [shareUrl, setShareUrl] = useState<string>("");
+  
   const handleExportPDF = () => {
-    // TODO: Implement PDF export in next task
-    alert('PDF export feature coming soon!');
+    // Basic PDF export - open print dialog
+    window.print();
   };
   
-  const handleShareLink = () => {
-    // TODO: Implement share link generation in next task
-    alert('Share link feature coming soon!');
+  const handleShareLink = async () => {
+    try {
+      setIsSaving(true);
+      
+      const response = await fetch('/api/porpoise/scenarios', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({
+          name: `${result.tierPricing.tierName} - ${formData.numUsers} users`,
+          description: `${formData.gpuHoursMonthly} GPU hours/mo, ${formData.storageGb}GB storage`,
+          formData,
+          calculationResult: result
+        })
+      });
+      
+      if (!response.ok) {
+        throw new Error('Failed to save scenario');
+      }
+      
+      const data = await response.json();
+      const fullUrl = `${window.location.origin}${data.shareUrl}`;
+      setShareUrl(fullUrl);
+      
+      // Copy to clipboard
+      await navigator.clipboard.writeText(fullUrl);
+      alert(`✅ Share link copied to clipboard!\n\n${fullUrl}`);
+    } catch (error) {
+      console.error('Error generating share link:', error);
+      alert('Failed to generate share link. Please try again.');
+    } finally {
+      setIsSaving(false);
+    }
   };
   
   return (
@@ -573,12 +606,19 @@ export default function ScenarioSimulationStep({ formData, viewMode }: ScenarioS
             <Button 
               variant="outline" 
               onClick={handleShareLink}
+              disabled={isSaving}
               className="gap-2"
               data-testid="button-share-link"
             >
               <Share2 className="w-4 h-4" />
-              Generate Share Link
+              {isSaving ? 'Saving...' : 'Generate Share Link'}
             </Button>
+            
+            {shareUrl && (
+              <div className="flex-1 flex items-center gap-2 px-3 py-2 bg-muted rounded-md">
+                <span className="text-sm text-muted-foreground truncate">{shareUrl}</span>
+              </div>
+            )}
             <Button 
               variant="outline" 
               className="gap-2"
