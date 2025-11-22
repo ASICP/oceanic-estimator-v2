@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { pdf } from '@react-pdf/renderer';
+import * as XLSX from 'xlsx';
 import { PorpoisePDFDocument } from "./PorpoisePDFDocument";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -320,7 +321,7 @@ export default function ScenarioSimulationStep({ formData, viewMode, savedMigrat
         headers: { 'Content-Type': 'application/json' },
         credentials: 'include',
         body: JSON.stringify({
-          name: `${result.tierPricing.tierName} - ${formData.numUsers} users`,
+          name: `${result?.tierPricing.tierName} - ${formData.numUsers} users`,
           description: `${formData.gpuHoursMonthly} GPU hours/mo, ${formData.storageGb}GB storage`,
           formData,
           calculationResult: result,
@@ -344,6 +345,112 @@ export default function ScenarioSimulationStep({ formData, viewMode, savedMigrat
       alert('Failed to generate share link. Please try again.');
     } finally {
       setIsSaving(false);
+    }
+  };
+
+  const handleExportExcel = () => {
+    // Guard against missing result
+    if (!result || !result.tierPricing) {
+      console.error('Cannot export Excel: calculation data not available');
+      return;
+    }
+
+    try {
+      // Create workbook
+      const wb = XLSX.utils.book_new();
+
+      // Sheet 1: Summary
+      const summaryData = [
+        ['Porpoise Pricing Quote'],
+        [''],
+        ['Tier', result.tierPricing.tierName],
+        ['Billing Period', formData.billingPeriod === 'annual' ? 'Annual' : 'Monthly'],
+        ['Number of Users', formData.numUsers],
+        ['GPU Hours/Month', formData.gpuHoursMonthly],
+        ['Storage (GB)', formData.storageGb],
+        ['API Calls/Month', formData.apiCallsMonthly],
+        [''],
+        ['Monthly Cost', `$${result.customerCosts.effectiveMonthlyCost.toFixed(2)}`],
+        ['Annual Cost', `$${result.customerCosts.annualCost.toFixed(2)}`],
+        ['Gross Margin', `${result.margins.grossMarginPercent.toFixed(1)}%`]
+      ];
+      const wsSummary = XLSX.utils.aoa_to_sheet(summaryData);
+      XLSX.utils.book_append_sheet(wb, wsSummary, 'Summary');
+
+      // Sheet 2: Cost Breakdown
+      const costData = [
+        ['Cost Breakdown'],
+        [''],
+        ['Category', 'Monthly Cost', 'Annual Cost'],
+        ['Base Tier Price', `$${result.tierPricing.baseMonthlyCost.toFixed(2)}`, `$${result.tierPricing.baseAnnualCost.toFixed(2)}`],
+        ['GPU Hours', `$${result.usageCosts.gpuCost.toFixed(2)}`, `$${(result.usageCosts.gpuCost * 12).toFixed(2)}`],
+        ['Storage', `$${result.usageCosts.storageCost.toFixed(2)}`, `$${(result.usageCosts.storageCost * 12).toFixed(2)}`],
+        ['API Calls', `$${result.usageCosts.apiCallsCost.toFixed(2)}`, `$${(result.usageCosts.apiCallsCost * 12).toFixed(2)}`],
+        ['Avatars', `$${result.usageCosts.avatarCost.toFixed(2)}`, `$${(result.usageCosts.avatarCost * 12).toFixed(2)}`],
+        [''],
+        ['Total', `$${result.customerCosts.monthlyCost.toFixed(2)}`, `$${result.customerCosts.annualCost.toFixed(2)}`]
+      ];
+      const wsCost = XLSX.utils.aoa_to_sheet(costData);
+      XLSX.utils.book_append_sheet(wb, wsCost, 'Cost Breakdown');
+
+      // Sheet 3: 12-Month Projection
+      const projectionHeaders = [['Month', 'Monthly Cost', 'Competitor Savings']];
+      const projectionRows = projectionData.map(item => [
+        item.month,
+        `$${item.cost.toFixed(2)}`,
+        `$${item.savings.toFixed(2)}`
+      ]);
+      const wsProjection = XLSX.utils.aoa_to_sheet([...projectionHeaders, ...projectionRows]);
+      XLSX.utils.book_append_sheet(wb, wsProjection, '12-Month Projection');
+
+      // Sheet 4: Growth Scaling
+      const scalingHeaders = [['Scenario', 'Annual Cost', 'Users', 'GPU Hours', 'Savings']];
+      const scalingRows = scalingData.map(item => [
+        item.scenario,
+        `$${item.annualCost.toFixed(2)}`,
+        item.users,
+        item.gpuHours,
+        `$${item.savings.toFixed(2)}`
+      ]);
+      const wsScaling = XLSX.utils.aoa_to_sheet([...scalingHeaders, ...scalingRows]);
+      XLSX.utils.book_append_sheet(wb, wsScaling, 'Growth Scaling');
+
+      // Sheet 5: Competitor Comparison
+      if (result.competitors && result.competitors.length > 0) {
+        const competitorHeaders = [['Competitor', 'Annual Cost', 'Savings', 'Savings %']];
+        const competitorRows = result.competitors.map(comp => [
+          comp.competitorName,
+          `$${comp.annualCost.toFixed(2)}`,
+          `$${comp.savings.toFixed(2)}`,
+          `${comp.savingsPercent.toFixed(1)}%`
+        ]);
+        const wsCompetitors = XLSX.utils.aoa_to_sheet([...competitorHeaders, ...competitorRows]);
+        XLSX.utils.book_append_sheet(wb, wsCompetitors, 'Competitor Comparison');
+      }
+
+      // Sheet 6: Migration Analysis (if available)
+      if (migrationCost) {
+        const migrationData = [
+          ['Migration Analysis'],
+          [''],
+          ['From', migrationCost.competitorName || 'Unknown'],
+          ['Data Export Cost', `$${migrationCost.dataExportCost.toFixed(2)}`],
+          ['Total Migration Cost', `$${migrationCost.totalMigrationCost.toFixed(2)}`],
+          ['Monthly Savings', `$${migrationCost.monthlySavings.toFixed(2)}`],
+          ['Annual Savings', `$${migrationCost.annualSavings.toFixed(2)}`],
+          ['Payback Period', `${migrationCost.paybackMonths.toFixed(1)} months`],
+          ['3-Year Savings', `$${migrationCost.threeYearSavings.toFixed(2)}`]
+        ];
+        const wsMigration = XLSX.utils.aoa_to_sheet(migrationData);
+        XLSX.utils.book_append_sheet(wb, wsMigration, 'Migration Analysis');
+      }
+
+      // Generate and download file
+      const fileName = `porpoise-quote-${result.tierPricing.tierName}-${new Date().toISOString().split('T')[0]}.xlsx`;
+      XLSX.writeFile(wb, fileName);
+    } catch (error) {
+      console.error('Error generating Excel:', error);
+      alert('Failed to generate Excel file. Please try again.');
     }
   };
   
@@ -705,6 +812,8 @@ export default function ScenarioSimulationStep({ formData, viewMode, savedMigrat
             )}
             <Button 
               variant="outline" 
+              onClick={handleExportExcel}
+              disabled={isCalculating || !result}
               className="gap-2"
               data-testid="button-download-data"
             >
