@@ -6,6 +6,7 @@ import { ChevronLeft, ChevronRight, Calculator, Eye, EyeOff } from "lucide-react
 import ProductSelectionStep from "@/components/porpoise/ProductSelectionStep";
 import TeamConfigurationStep from "@/components/porpoise/TeamConfigurationStep";
 import ResultsStep from "@/components/porpoise/ResultsStep";
+import ScenarioSimulationStep from "@/components/porpoise/ScenarioSimulationStep";
 
 export interface PorpoiseFormData {
   // Step 1: Product Selection
@@ -48,7 +49,7 @@ export default function PorpoiseCalculatorPage() {
   };
   
   const handleNext = () => {
-    if (currentStep < 3) {
+    if (currentStep < 4) {
       setCurrentStep(prev => prev + 1);
     }
   };
@@ -106,7 +107,7 @@ export default function PorpoiseCalculatorPage() {
           {/* Step Indicator */}
           <div className="mb-8">
             <div className="flex items-center justify-between mb-2">
-              {[1, 2, 3].map((step) => (
+              {[1, 2, 3, 4].map((step) => (
                 <div key={step} className="flex items-center flex-1">
                   <div className="flex items-center gap-2">
                     <div
@@ -127,9 +128,10 @@ export default function PorpoiseCalculatorPage() {
                       {step === 1 && 'Product Selection'}
                       {step === 2 && 'Configuration'}
                       {step === 3 && 'Results'}
+                      {step === 4 && 'Simulate'}
                     </span>
                   </div>
-                  {step < 3 && (
+                  {step < 4 && (
                     <div className={`flex-1 h-0.5 mx-4 ${
                       currentStep > step ? 'bg-primary' : 'bg-muted'
                     }`} />
@@ -162,6 +164,13 @@ export default function PorpoiseCalculatorPage() {
                   viewMode={viewMode}
                 />
               )}
+              
+              {currentStep === 4 && (
+                <ScenarioSimulationStep
+                  formData={formData}
+                  viewMode={viewMode}
+                />
+              )}
             </CardContent>
           </Card>
           
@@ -179,10 +188,10 @@ export default function PorpoiseCalculatorPage() {
             </Button>
             
             <div className="text-sm text-muted-foreground">
-              Step {currentStep} of 3
+              Step {currentStep} of 4
             </div>
             
-            {currentStep < 3 ? (
+            {currentStep < 4 ? (
               <Button
                 onClick={handleNext}
                 className="gap-2"
