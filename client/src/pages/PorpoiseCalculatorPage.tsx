@@ -241,7 +241,7 @@ export default function PorpoiseCalculatorPage() {
                 <ScenarioSimulationStep
                   formData={formData}
                   viewMode={viewMode}
-                  savedMigrationData={savedMigrationData}
+                  savedMigrationData={savedScenario?.advancedOptions?.migrationData || savedMigrationData}
                 />
               )}
             </CardContent>

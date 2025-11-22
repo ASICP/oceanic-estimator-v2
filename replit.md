@@ -11,11 +11,14 @@ This repository hosts two pricing calculator applications:
 ## Version History
 
 ### Porpoise v2 Calculator
-- **v2.0.0 - Phase 1** (Current): Initial release with 3-step wizard, pricing calculation engine, COGS analysis, margin validation, and competitor comparison
+- **v2.0.0 - Phase 2** (Current): Full 4-step calculator with scenario simulation, share links, and PDF export
   - Database: 9 PostgreSQL tables with Drizzle ORM
   - Calculation Engine: Tier pricing, usage-based costs, COGS, margin analysis
-  - UI: 3-step wizard with Client/Internal view modes
+  - Step 4 Features: 12-month projections, growth scaling (2x/5x/10x), migration calculator, PDF export, share links
+  - UI: 4-step wizard with Client/Internal view modes
   - Routes: "/" (main calculator), "/estimator-v1" (historical v1)
+
+- **v2.0.0 - Phase 1**: Initial release with 3-step wizard, pricing calculation engine, COGS analysis, margin validation, and competitor comparison
 
 ### Esteemed Ventures Multi-Agent v1
 - **v1.0.0**: Original Esteemed Ventures Multi-Agent Cost Estimator (available at https://github.com/ASICP/clabs-margin-calculator-v1)
