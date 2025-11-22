@@ -248,7 +248,7 @@ export class PDFGenerator {
     yPosition += 10;
     doc.setFontSize(12);
     
-    yPosition = this.wrapText(doc, 'This Service Agreement ("Agreement") is entered into between Esteemed Ventures ("Service Provider") and the Client for the development and implementation of AI agent solutions.', 20, yPosition, 170);
+    yPosition = this.wrapText(doc, 'This Service Agreement ("Agreement") is entered into between CLabs ("Service Provider") and the Client for the development and implementation of AI agent solutions.', 20, yPosition, 170);
     yPosition += 15;
     
     // Scope of Work
@@ -316,7 +316,7 @@ export class PDFGenerator {
     
     const terms = [
       'Payment Terms: 50% upfront, 50% upon project completion and acceptance.',
-      'Intellectual Property: Client retains ownership of custom workflows and configurations. Esteemed Ventures retains ownership of underlying AI agent framework and methodology.',
+      'Intellectual Property: Client retains ownership of custom workflows and configurations. CLabs retains ownership of underlying AI agent framework and methodology.',
       'Support: 30 days of post-implementation support included. Extended support available separately.',
       'Confidentiality: Both parties agree to maintain confidentiality of proprietary information.',
       'Warranty: Service Provider warrants that the delivered solution will perform substantially as specified for 90 days from delivery.',
@@ -336,7 +336,7 @@ export class PDFGenerator {
     yPosition += 20;
     doc.setFontSize(12);
     
-    doc.text('Esteemed Ventures:', 20, yPosition);
+    doc.text('CLabs:', 20, yPosition);
     yPosition += 20;
     doc.text('Signature: _________________________', 20, yPosition);
     yPosition += 10;

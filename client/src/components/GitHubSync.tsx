@@ -303,7 +303,7 @@ export default function GitHubSync() {
                           id="repoName"
                           value={newRepoName}
                           onChange={(e) => setNewRepoName(e.target.value)}
-                          placeholder="esteemed-ventures-calculator"
+                          placeholder="clabs-margin-calculator"
                           data-testid="input-repo-name"
                         />
                       </div>

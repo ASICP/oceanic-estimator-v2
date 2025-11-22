@@ -8,7 +8,7 @@ export default function GitHubSyncPage() {
           <div className="text-center space-y-2">
             <h1 className="text-3xl font-bold">GitHub Integration</h1>
             <p className="text-muted-foreground">
-              Sync your Esteemed Ventures Agent Calculator to GitHub for version control and collaboration
+              Sync your CLabs Margin Calculator to GitHub for version control and collaboration
             </p>
           </div>
           

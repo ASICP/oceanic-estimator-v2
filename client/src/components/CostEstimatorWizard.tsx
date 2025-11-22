@@ -86,7 +86,7 @@ export default function CostEstimatorWizard() {
               Cost Estimation Complete!
             </h1>
             <p className="text-muted-foreground max-w-2xl mx-auto">
-              Your comprehensive cost analysis for the Esteemed Ventures AI agent platform has been generated. 
+              Your comprehensive cost and margin analysis has been generated. 
               You should receive a detailed report shortly with actionable insights and next steps.
             </p>
             <div className="pt-6">
