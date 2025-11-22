@@ -23,6 +23,11 @@ import {
 } from "./auth-middleware";
 import { CostCalculator, costCalculationSchema } from "./costCalculator";
 import { GitHubSync } from "./github-sync";
+import { seedPorpoiseData } from "./porpoise-seed";
+import { PorpoiseCalculator, porpoiseCalculationSchema } from "./porpoise-calculator";
+import { db } from "./db";
+import { pricingTiers, competitorPricing } from "@shared/schema";
+import { eq } from "drizzle-orm";
 
 // Initialize Stripe
 if (!process.env.STRIPE_SECRET_KEY) {
@@ -660,6 +665,60 @@ router.post("/api/seed-database", async (req, res) => {
   } catch (error) {
     console.error("Error seeding database:", error);
     res.status(500).json({ error: "Failed to seed database" });
+  }
+});
+
+// Porpoise v2 Seed Data endpoint
+router.post("/api/seed-porpoise", async (req, res) => {
+  try {
+    const result = await seedPorpoiseData();
+    res.json(result);
+  } catch (error) {
+    console.error("Error seeding Porpoise data:", error);
+    res.status(500).json({ error: "Failed to seed Porpoise data" });
+  }
+});
+
+// Porpoise v2 Calculator endpoint
+router.post("/api/porpoise/calculate", async (req, res) => {
+  try {
+    console.log('[PORPOISE_API] Received calculation request:', JSON.stringify(req.body, null, 2));
+    
+    const validation = porpoiseCalculationSchema.safeParse(req.body);
+    if (!validation.success) {
+      console.log('[PORPOISE_API] Validation failed:', validation.error);
+      return res.status(400).json({ error: "Invalid calculation data", details: validation.error });
+    }
+    
+    console.log('[PORPOISE_API] Validation passed, calculating...');
+    const result = await PorpoiseCalculator.calculate(validation.data);
+    console.log('[PORPOISE_API] Calculation complete');
+    res.json(result);
+  } catch (error) {
+    console.error("[PORPOISE_API] Error calculating costs:", error);
+    res.status(500).json({ error: "Failed to calculate costs" });
+  }
+});
+
+// Get Porpoise pricing tiers
+router.get("/api/porpoise/tiers", async (req, res) => {
+  try {
+    const tiers = await db.select().from(pricingTiers).where(eq(pricingTiers.active, true));
+    res.json(tiers);
+  } catch (error) {
+    console.error("Error fetching pricing tiers:", error);
+    res.status(500).json({ error: "Failed to fetch pricing tiers" });
+  }
+});
+
+// Get Porpoise competitors
+router.get("/api/porpoise/competitors", async (req, res) => {
+  try {
+    const competitors = await db.select().from(competitorPricing).where(eq(competitorPricing.active, true));
+    res.json(competitors);
+  } catch (error) {
+    console.error("Error fetching competitors:", error);
+    res.status(500).json({ error: "Failed to fetch competitors" });
   }
 });
 

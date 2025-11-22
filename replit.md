@@ -2,11 +2,22 @@
 
 ## Overview
 
-This is a React/TypeScript web application that provides margin and cost estimation for AI-powered investment operations. The application features a 5-step wizard interface that helps users estimate costs, margins, and time for completing projects using specialized AI agents. The system covers the full investment lifecycle including deal sourcing, financial modeling, legal review, and portfolio optimization, with the goal of providing 60-70% operational cost savings compared to traditional methods.
+This repository hosts two pricing calculator applications:
+
+1. **Porpoise v2 Calculator** (Primary - Phase 1 Complete): A PostgreSQL-based pricing calculator for the Porpoise AI service with hybrid pricing approach, margin validation against 72-82% target range, and competitor comparison. Features a 3-step wizard interface with role-based visibility controls.
+
+2. **Esteemed Ventures Multi-Agent Cost Estimator v1** (Historical Reference): Original 5-step wizard for AI-powered investment operations cost estimation. Retained for historical reference until agents service is upgraded.
 
 ## Version History
 
-- **v2.0.0** (Current): CLabs Margin Calculator v2 - Enhanced cost breakdown visualization, improved tooltip information, and refined calculation pipeline
+### Porpoise v2 Calculator
+- **v2.0.0 - Phase 1** (Current): Initial release with 3-step wizard, pricing calculation engine, COGS analysis, margin validation, and competitor comparison
+  - Database: 9 PostgreSQL tables with Drizzle ORM
+  - Calculation Engine: Tier pricing, usage-based costs, COGS, margin analysis
+  - UI: 3-step wizard with Client/Internal view modes
+  - Routes: "/" (main calculator), "/estimator-v1" (historical v1)
+
+### Esteemed Ventures Multi-Agent v1
 - **v1.0.0**: Original Esteemed Ventures Multi-Agent Cost Estimator (available at https://github.com/ASICP/clabs-margin-calculator-v1)
 
 ## User Preferences
@@ -31,9 +42,22 @@ Preferred communication style: Simple, everyday language.
 - **Development Server**: Custom Vite integration for hot module replacement during development
 
 ### Database Schema
-- **Workflows Table**: Stores preset and custom workflow configurations with complexity ratings and default agent assignments
-- **Agents Table**: Contains agent profiles with capabilities, domains, costs, and recommendation flags
-- **Cost Estimates Table**: Persists complete cost estimation sessions with all wizard step data
+
+#### Porpoise v2 Tables (9 tables)
+- **pricing_tiers**: Porpoise pricing tiers (Starter, Professional, Team, Enterprise) with included resources and limits
+- **usage_pricing**: Usage-based pricing (GPU hours, storage, API calls, avatars, add-ons)
+- **cogs_structure**: Cost of Goods Sold structure (infrastructure, avatars, Twilio, support costs)
+- **competitor_pricing**: Competitor pricing data for comparison (Salesforce, AWS, Google, Azure, etc.)
+- **competitor_pricing_history**: Historical competitor pricing tracking
+- **pricing_validation_queue**: Queue for pricing validation workflows
+- **calculator_scenarios**: Saved pricing scenarios for reuse
+- **migration_analyses**: Migration cost analysis tracking
+- **user_roles**: Role-based access control (Client View vs Internal View)
+
+#### Esteemed Ventures v1 Tables (Legacy)
+- **Workflows Table**: Preset and custom workflow configurations with complexity ratings
+- **Agents Table**: Agent profiles with capabilities, domains, costs, and recommendation flags
+- **Cost Estimates Table**: Complete cost estimation sessions with all wizard step data
 - **Cost Breakdown Items**: Detailed line items for cost analysis and reporting
 - **Pricing Models Table**: Configurable pricing tiers and billing models
 
@@ -43,7 +67,17 @@ Preferred communication style: Simple, everyday language.
 - **Repository Pattern**: Storage abstraction layer supporting both in-memory development and PostgreSQL production environments
 - **Hook-Based State**: Custom React hooks for data fetching, cost calculations, and wizard state management
 
-### Cost Calculation Engine
+### Cost Calculation Engines
+
+#### Porpoise v2 Calculator (Active)
+- **Tier Pricing**: Base pricing with annual discounts (10-20% by tier)
+- **Usage-Based Costs**: Overage calculations for GPU hours, storage, API calls, avatars
+- **COGS Calculation**: Infrastructure (GPU, storage, network), avatars (HeyGen), Twilio, tier-specific support costs
+- **Margin Analysis**: Gross margin calculation with tier-specific targets (Starter: 72-75%, Professional: 75-78%, Team: 76-79%, Enterprise: 78-82%)
+- **Competitor Comparison**: Savings calculation against 8 competitors (Salesforce, AWS, Google, Azure, Oracle, Replicate, Predibase, HuggingFace)
+- **Validation**: Automated margin validation against target ranges with status indicators
+
+#### Esteemed Ventures v1 Calculator (Legacy)
 - **Input Processing**: Comprehensive data collection across workflow complexity, agent selection, resource requirements, and billing preferences
 - **Calculation Logic**: Multi-factor cost modeling including API usage, infrastructure costs, error rate impacts, and volume discounts
 - **Savings Analysis**: Comparative analysis showing traditional vs AI-powered costs with detailed breakdown charts
