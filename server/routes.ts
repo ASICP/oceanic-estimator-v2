@@ -707,8 +707,16 @@ router.post("/api/porpoise/scenarios", async (req, res) => {
     
     const { calculatorScenarios } = await import("@shared/schema");
     
+    // Prepare advanced options JSON
+    const advancedOptions = {
+      deploymentType: formData.deploymentType,
+      ssoRequired: formData.ssoRequired,
+      whiteLabelAvatars: formData.whiteLabelAvatars,
+      description: description || ''
+    };
+    
     // Save to database (using calculator_scenarios table)
-    const scenario = await db.insert(calculatorScenarios).values({
+    const result = await db.insert(calculatorScenarios).values({
       scenarioName: name || `Scenario ${new Date().toLocaleDateString()}`,
       tierId: formData.tierId,
       billingPeriod: formData.billingPeriod,
@@ -718,21 +726,20 @@ router.post("/api/porpoise/scenarios", async (req, res) => {
       gpuHoursMonthly: formData.gpuHoursMonthly.toString(),
       apiCallsMonthly: formData.apiCallsMonthly,
       numAvatars: formData.numAvatars,
-      deploymentType: formData.deploymentType || 'cloud',
-      ssoRequired: formData.ssoRequired || false,
-      whiteLabelAvatars: formData.whiteLabelAvatars || false,
+      advancedOptions: advancedOptions,
+      monthlyCost: calculationResult.customerCosts.monthlyCost.toString(),
       annualCost: calculationResult.customerCosts.annualCost.toString(),
-      grossMarginPercent: calculationResult.margins.grossMarginPercent.toString(),
-      competitorSavings: (calculationResult.competitors[0]?.savings || 0).toString(),
-      inputData: formData,
-      outputData: calculationResult,
-      description: description || ''
+      monthlyCogs: calculationResult.cogs.totalMonthlyCogs.toString(),
+      annualCogs: calculationResult.cogs.totalAnnualCogs.toString(),
+      grossMarginPercent: calculationResult.margins.grossMarginPercent.toString()
     }).returning();
     
+    const scenario = result[0];
+    
     res.status(201).json({
-      id: scenario[0].scenarioId,
-      shareUrl: `/calculator?scenario=${scenario[0].scenarioId}`,
-      scenario: scenario[0]
+      id: scenario.scenarioId,
+      shareUrl: `/?scenario=${scenario.scenarioId}`,
+      scenario: scenario
     });
   } catch (error) {
     console.error("[PORPOISE_API] Error saving scenario:", error);

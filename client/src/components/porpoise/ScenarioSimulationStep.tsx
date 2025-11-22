@@ -1,5 +1,7 @@
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
+import { pdf } from '@react-pdf/renderer';
+import { PorpoisePDFDocument } from "./PorpoisePDFDocument";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -232,11 +234,31 @@ export default function ScenarioSimulationStep({ formData, viewMode }: ScenarioS
   const migrationCost = calculateMigrationCost();
   
   const [isSaving, setIsSaving] = useState(false);
+  const [isExporting, setIsExporting] = useState(false);
   const [shareUrl, setShareUrl] = useState<string>("");
   
-  const handleExportPDF = () => {
-    // Basic PDF export - open print dialog
-    window.print();
+  const handleExportPDF = async () => {
+    try {
+      setIsExporting(true);
+      
+      // Generate PDF using @react-pdf/renderer
+      const blob = await pdf(<PorpoisePDFDocument formData={formData} result={result} />).toBlob();
+      
+      // Create download link
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `porpoise-quote-${result.tierPricing.tierName}-${new Date().toISOString().split('T')[0]}.pdf`;
+      link.click();
+      
+      // Cleanup
+      URL.revokeObjectURL(url);
+    } catch (error) {
+      console.error('Error generating PDF:', error);
+      alert('Failed to generate PDF. Please try again.');
+    } finally {
+      setIsExporting(false);
+    }
   };
   
   const handleShareLink = async () => {
@@ -283,7 +305,7 @@ export default function ScenarioSimulationStep({ formData, viewMode }: ScenarioS
         </p>
       </div>
       
-      <Tabs defaultValue="projection" className="w-full">
+      <Tabs defaultValue="projection" className="w-full" data-testid="tabs-scenarios">
         <TabsList className="grid w-full grid-cols-3">
           <TabsTrigger value="projection" data-testid="tab-projection">
             12-Month Projection
@@ -354,7 +376,7 @@ export default function ScenarioSimulationStep({ formData, viewMode }: ScenarioS
               </ResponsiveContainer>
               
               <div className="grid grid-cols-3 gap-4 mt-6">
-                <Card>
+                <Card data-testid="card-total-cost">
                   <CardContent className="pt-6">
                     <div className="text-sm text-muted-foreground mb-1">Total Year 1 Cost</div>
                     <div className="text-2xl font-bold">
@@ -362,7 +384,7 @@ export default function ScenarioSimulationStep({ formData, viewMode }: ScenarioS
                     </div>
                   </CardContent>
                 </Card>
-                <Card>
+                <Card data-testid="card-total-savings">
                   <CardContent className="pt-6">
                     <div className="text-sm text-muted-foreground mb-1">Total Year 1 Savings</div>
                     <div className="text-2xl font-bold text-green-600">
@@ -370,7 +392,7 @@ export default function ScenarioSimulationStep({ formData, viewMode }: ScenarioS
                     </div>
                   </CardContent>
                 </Card>
-                <Card>
+                <Card data-testid="card-roi">
                   <CardContent className="pt-6">
                     <div className="text-sm text-muted-foreground mb-1">ROI</div>
                     <div className="text-2xl font-bold">
@@ -409,7 +431,7 @@ export default function ScenarioSimulationStep({ formData, viewMode }: ScenarioS
               
               <div className="mt-6 space-y-4">
                 {scalingData.map((scenario, index) => (
-                  <Card key={index}>
+                  <Card key={index} data-testid={`card-scaling-${scenario.multiplier}`}>
                     <CardContent className="pt-6">
                       <div className="flex items-center justify-between mb-4">
                         <div>
@@ -490,7 +512,7 @@ export default function ScenarioSimulationStep({ formData, viewMode }: ScenarioS
               
               {migrationCost && (
                 <div className="space-y-4">
-                  <Card className="bg-muted/50">
+                  <Card className="bg-muted/50" data-testid="card-migration-analysis">
                     <CardContent className="pt-6">
                       <h3 className="font-semibold mb-4">Migration Analysis: {migrationCost.competitorName}</h3>
                       
@@ -596,12 +618,13 @@ export default function ScenarioSimulationStep({ formData, viewMode }: ScenarioS
         <CardContent>
           <div className="flex gap-3">
             <Button 
-              onClick={handleExportPDF} 
+              onClick={handleExportPDF}
+              disabled={isExporting}
               className="gap-2"
               data-testid="button-export-pdf"
             >
               <FileText className="w-4 h-4" />
-              Export PDF Quote
+              {isExporting ? 'Generating PDF...' : 'Export PDF Quote'}
             </Button>
             <Button 
               variant="outline" 
