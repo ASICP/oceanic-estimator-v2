@@ -145,8 +145,8 @@ export default function PorpoiseCalculatorPage() {
             <div className="flex items-center gap-3">
               <Calculator className="w-8 h-8 text-primary" />
               <div>
-                <h1 className="text-2xl font-bold">Porpoise v2</h1>
-                <p className="text-sm text-muted-foreground">Pricing Calculator</p>
+                <h1 className="text-2xl font-bold">Oceanic Platform Calculator</h1>
+                <p className="text-sm font-bold">Porpoise Calculator</p>
               </div>
             </div>
             
