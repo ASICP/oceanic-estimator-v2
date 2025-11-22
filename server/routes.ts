@@ -703,16 +703,17 @@ router.post("/api/porpoise/calculate", async (req, res) => {
 // Porpoise v2 Save Scenario endpoint
 router.post("/api/porpoise/scenarios", async (req, res) => {
   try {
-    const { name, description, formData, calculationResult } = req.body;
+    const { name, description, formData, calculationResult, migrationData } = req.body;
     
     const { calculatorScenarios } = await import("@shared/schema");
     
-    // Prepare advanced options JSON
+    // Prepare advanced options JSON with migration data
     const advancedOptions = {
       deploymentType: formData.deploymentType,
       ssoRequired: formData.ssoRequired,
       whiteLabelAvatars: formData.whiteLabelAvatars,
-      description: description || ''
+      description: description || '',
+      migrationData: migrationData || null
     };
     
     // Save to database (using calculator_scenarios table)

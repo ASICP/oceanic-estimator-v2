@@ -41,6 +41,7 @@ import { PorpoiseFormData } from "@/pages/PorpoiseCalculatorPage";
 interface ScenarioSimulationStepProps {
   formData: PorpoiseFormData;
   viewMode: 'client' | 'internal';
+  savedMigrationData?: any;
 }
 
 interface CalculationResult {
@@ -91,13 +92,13 @@ interface CalculationResult {
   }>;
 }
 
-export default function ScenarioSimulationStep({ formData, viewMode }: ScenarioSimulationStepProps) {
+export default function ScenarioSimulationStep({ formData, viewMode, savedMigrationData }: ScenarioSimulationStepProps) {
   const [scalingMultiplier, setScalingMultiplier] = useState<number>(1);
-  const [migrationSource, setMigrationSource] = useState<string>("");
+  const [migrationSource, setMigrationSource] = useState<string>(savedMigrationData?.selectedCompetitor || "");
   
   // Get current calculation
   const formDataKey = JSON.stringify(formData);
-  const { data: result } = useQuery<CalculationResult>({
+  const { data: result, isLoading: isCalculating } = useQuery<CalculationResult>({
     queryKey: ['porpoise-calculate', formDataKey],
     queryFn: async () => {
       const response = await fetch('/api/porpoise/calculate', {
@@ -118,12 +119,13 @@ export default function ScenarioSimulationStep({ formData, viewMode }: ScenarioS
     refetchOnWindowFocus: false
   });
   
-  if (!result) {
-    return <div className="text-center py-12 text-muted-foreground">Loading calculations...</div>;
-  }
+  // Don't early return - let the UI render with disabled buttons while loading
   
   // Generate 12-month projection data
   const generateProjectionData = () => {
+    // Guard against missing data
+    if (!result?.customerCosts || !result?.competitors) return [];
+    
     const months = [];
     const baseMonthly = result.customerCosts.effectiveMonthlyCost;
     
@@ -142,6 +144,9 @@ export default function ScenarioSimulationStep({ formData, viewMode }: ScenarioS
   
   // Generate scaling comparison data
   const generateScalingData = () => {
+    // Guard against missing data
+    if (!result?.customerCosts || !result?.competitors) return [];
+    
     const baseAnnual = result.customerCosts.annualCost;
     
     return [
@@ -182,7 +187,8 @@ export default function ScenarioSimulationStep({ formData, viewMode }: ScenarioS
   
   // Calculate migration costs
   const calculateMigrationCost = () => {
-    if (!migrationSource) return null;
+    // Guard against missing data
+    if (!migrationSource || !result?.competitors) return null;
     
     const competitor = result.competitors.find(c => c.competitorKey === migrationSource);
     if (!competitor) return null;
@@ -218,31 +224,63 @@ export default function ScenarioSimulationStep({ formData, viewMode }: ScenarioS
     
     return {
       competitorName: competitor.competitorName,
+      selectedCompetitor: migrationSource,
       dataSize: estimatedDataSize,
-      egressCost,
+      dataExportCost: egressCost,
       setupFee,
       trainingTime,
       totalMigrationCost,
       monthlySavings: competitor.savings / 12,
-      breakEvenMonths,
-      firstYearNetSavings: competitor.savings - totalMigrationCost
+      paybackMonths: breakEvenMonths,
+      annualSavings: competitor.savings - totalMigrationCost,
+      threeYearSavings: (competitor.savings * 3) - totalMigrationCost
     };
   };
   
-  const projectionData = generateProjectionData();
-  const scalingData = generateScalingData();
-  const migrationCost = calculateMigrationCost();
+  // Only calculate derived data when result is available
+  const projectionData = result ? generateProjectionData() : [];
+  const scalingData = result ? generateScalingData() : [];
+  
+  // Prioritize saved migration data for share-link hydration, otherwise calculate fresh
+  const migrationCost = savedMigrationData 
+    ? {
+        competitorName: savedMigrationData.competitorName,
+        selectedCompetitor: savedMigrationData.selectedCompetitor,
+        dataSize: 0,
+        dataExportCost: savedMigrationData.dataExportCost || 0,
+        setupFee: 0,
+        trainingTime: 16,
+        totalMigrationCost: savedMigrationData.totalMigrationCost || 0,
+        monthlySavings: savedMigrationData.monthlySavings || 0,
+        paybackMonths: savedMigrationData.paybackMonths || 0,
+        annualSavings: savedMigrationData.annualSavings || 0,
+        threeYearSavings: savedMigrationData.threeYearSavings || 0
+      }
+    : (result && migrationSource ? calculateMigrationCost() : null);
   
   const [isSaving, setIsSaving] = useState(false);
   const [isExporting, setIsExporting] = useState(false);
   const [shareUrl, setShareUrl] = useState<string>("");
   
   const handleExportPDF = async () => {
+    // Guard against missing result
+    if (!result || !result.tierPricing) {
+      console.error('Cannot export PDF: calculation data not available');
+      return;
+    }
+    
     try {
       setIsExporting(true);
       
-      // Generate PDF using @react-pdf/renderer
-      const blob = await pdf(<PorpoisePDFDocument formData={formData} result={result} />).toBlob();
+      // Generate PDF using @react-pdf/renderer with all Step 4 data
+      const blob = await pdf(
+        <PorpoisePDFDocument 
+          formData={formData} 
+          result={result}
+          scalingMultiplier={scalingMultiplier}
+          migrationData={migrationCost}
+        />
+      ).toBlob();
       
       // Create download link
       const url = URL.createObjectURL(blob);
@@ -265,6 +303,18 @@ export default function ScenarioSimulationStep({ formData, viewMode }: ScenarioS
     try {
       setIsSaving(true);
       
+      // Include migration data if available - map field names correctly
+      const migrationData = migrationCost ? {
+        selectedCompetitor: migrationCost.selectedCompetitor || migrationSource,
+        competitorName: migrationCost.competitorName,
+        dataExportCost: migrationCost.dataExportCost,
+        totalMigrationCost: migrationCost.totalMigrationCost,
+        annualSavings: migrationCost.annualSavings,
+        monthlySavings: migrationCost.monthlySavings,
+        paybackMonths: migrationCost.paybackMonths,
+        threeYearSavings: migrationCost.threeYearSavings
+      } : null;
+      
       const response = await fetch('/api/porpoise/scenarios', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -273,7 +323,8 @@ export default function ScenarioSimulationStep({ formData, viewMode }: ScenarioS
           name: `${result.tierPricing.tierName} - ${formData.numUsers} users`,
           description: `${formData.gpuHoursMonthly} GPU hours/mo, ${formData.storageGb}GB storage`,
           formData,
-          calculationResult: result
+          calculationResult: result,
+          migrationData
         })
       });
       
@@ -305,6 +356,16 @@ export default function ScenarioSimulationStep({ formData, viewMode }: ScenarioS
         </p>
       </div>
       
+      {isCalculating || !result ? (
+        <Card>
+          <CardContent className="py-12">
+            <div className="text-center text-muted-foreground">
+              Loading calculations...
+            </div>
+          </CardContent>
+        </Card>
+      ) : (
+        <>
       <Tabs defaultValue="projection" className="w-full" data-testid="tabs-scenarios">
         <TabsList className="grid w-full grid-cols-3">
           <TabsTrigger value="projection" data-testid="tab-projection">
@@ -524,7 +585,7 @@ export default function ScenarioSimulationStep({ formData, viewMode }: ScenarioS
                         
                         <div className="flex items-center justify-between">
                           <span className="text-sm text-muted-foreground">Data Egress Cost</span>
-                          <span className="font-semibold">${migrationCost.egressCost.toFixed(2)}</span>
+                          <span className="font-semibold">${migrationCost.dataExportCost.toFixed(2)}</span>
                         </div>
                         
                         <div className="flex items-center justify-between">
@@ -554,14 +615,14 @@ export default function ScenarioSimulationStep({ formData, viewMode }: ScenarioS
                         <div className="flex items-center justify-between">
                           <span className="text-sm text-muted-foreground">Break-even Period</span>
                           <span className="font-semibold">
-                            {migrationCost.breakEvenMonths === 0 ? 'Immediate' : `${migrationCost.breakEvenMonths} months`}
+                            {migrationCost.paybackMonths === 0 ? 'Immediate' : `${migrationCost.paybackMonths} months`}
                           </span>
                         </div>
                         
                         <div className="flex items-center justify-between">
                           <span className="text-sm font-semibold">First Year Net Savings</span>
                           <span className="font-bold text-green-600 text-lg">
-                            ${migrationCost.firstYearNetSavings.toLocaleString()}
+                            ${migrationCost.annualSavings.toLocaleString()}
                           </span>
                         </div>
                       </div>
@@ -619,12 +680,12 @@ export default function ScenarioSimulationStep({ formData, viewMode }: ScenarioS
           <div className="flex gap-3">
             <Button 
               onClick={handleExportPDF}
-              disabled={isExporting}
+              disabled={isExporting || isCalculating || !result}
               className="gap-2"
               data-testid="button-export-pdf"
             >
               <FileText className="w-4 h-4" />
-              {isExporting ? 'Generating PDF...' : 'Export PDF Quote'}
+              {isExporting ? 'Generating PDF...' : isCalculating ? 'Calculating...' : 'Export PDF Quote'}
             </Button>
             <Button 
               variant="outline" 
@@ -653,6 +714,8 @@ export default function ScenarioSimulationStep({ formData, viewMode }: ScenarioS
           </div>
         </CardContent>
       </Card>
+        </>
+      )}
     </div>
   );
 }
