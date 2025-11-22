@@ -1,8 +1,13 @@
-# Esteemed Ventures Multi-Agent Cost Estimator
+# CLabs Margin Calculator v2
 
 ## Overview
 
-This is a React/TypeScript web application that provides cost estimation for AI-powered investment operations using Esteemed Ventures' specialized agent platform. The application features a 5-step wizard interface that helps users estimate costs and time for completing projects using EV's SME Agents Service. The system covers the full investment lifecycle including deal sourcing, financial modeling, legal review, and portfolio optimization, with the goal of providing 60-70% operational cost savings compared to traditional methods.
+This is a React/TypeScript web application that provides margin and cost estimation for AI-powered investment operations. The application features a 5-step wizard interface that helps users estimate costs, margins, and time for completing projects using specialized AI agents. The system covers the full investment lifecycle including deal sourcing, financial modeling, legal review, and portfolio optimization, with the goal of providing 60-70% operational cost savings compared to traditional methods.
+
+## Version History
+
+- **v2.0.0** (Current): CLabs Margin Calculator v2 - Enhanced cost breakdown visualization, improved tooltip information, and refined calculation pipeline
+- **v1.0.0**: Original Esteemed Ventures Multi-Agent Cost Estimator (available at https://github.com/ASICP/clabs-margin-calculator-v1)
 
 ## User Preferences
 

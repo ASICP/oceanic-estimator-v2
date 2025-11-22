@@ -14,8 +14,8 @@ export default function WizardHeader({ currentStep, totalSteps, stepTitles }: Wi
       <div className="max-w-4xl mx-auto">
         <div className="flex items-center justify-between mb-4">
           <div className="flex items-center space-x-3">
-            <div className="text-2xl font-bold text-primary">EV</div>
-            <div className="text-sm text-muted-foreground">Agent Calculator</div>
+            <div className="text-2xl font-bold text-primary">CLabs</div>
+            <div className="text-sm text-muted-foreground">Margin Calculator v2</div>
           </div>
           <div className="text-sm text-muted-foreground">
             Step {currentStep} of {totalSteps}
