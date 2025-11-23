@@ -5,6 +5,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { ChevronLeft, ChevronRight, Calculator, Eye, EyeOff } from "lucide-react";
+import { ThemeToggle } from "@/components/ThemeToggle";
 import ProductSelectionStep from "@/components/porpoise/ProductSelectionStep";
 import TeamConfigurationStep from "@/components/porpoise/TeamConfigurationStep";
 import ResultsStep from "@/components/porpoise/ResultsStep";
@@ -150,25 +151,31 @@ export default function PorpoiseCalculatorPage() {
               </div>
             </div>
             
-            {/* View Mode Toggle */}
-            <Button
-              variant="outline"
-              onClick={toggleViewMode}
-              className="gap-2"
-              data-testid="button-toggle-view-mode"
-            >
-              {viewMode === 'client' ? (
-                <>
-                  <EyeOff className="w-4 h-4" />
-                  Client View
-                </>
-              ) : (
-                <>
-                  <Eye className="w-4 h-4" />
-                  Internal View
-                </>
-              )}
-            </Button>
+            {/* Right side controls */}
+            <div className="flex items-center gap-2">
+              {/* View Mode Toggle */}
+              <Button
+                variant="outline"
+                onClick={toggleViewMode}
+                className="gap-2"
+                data-testid="button-toggle-view-mode"
+              >
+                {viewMode === 'client' ? (
+                  <>
+                    <EyeOff className="w-4 h-4" />
+                    Client View
+                  </>
+                ) : (
+                  <>
+                    <Eye className="w-4 h-4" />
+                    Internal View
+                  </>
+                )}
+              </Button>
+              
+              {/* Theme Toggle */}
+              <ThemeToggle />
+            </div>
           </div>
         </div>
       </header>
