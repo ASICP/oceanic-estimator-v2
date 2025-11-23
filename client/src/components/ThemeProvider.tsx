@@ -19,15 +19,42 @@ export function ThemeProvider({
   defaultTheme = "light",
 }: ThemeProviderProps) {
   const [theme, setTheme] = useState<Theme>(() => {
-    const stored = localStorage.getItem("theme") as Theme;
-    return stored || defaultTheme;
+    if (typeof window === "undefined") {
+      return defaultTheme;
+    }
+    
+    try {
+      const stored = localStorage.getItem("theme") as Theme;
+      if (stored === "light" || stored === "dark") {
+        return stored;
+      }
+    } catch (error) {
+      console.warn("Failed to read theme from localStorage:", error);
+    }
+    
+    try {
+      if (window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches) {
+        return "dark";
+      }
+    } catch (error) {
+      console.warn("Failed to read system theme preference:", error);
+    }
+    
+    return defaultTheme;
   });
 
   useEffect(() => {
     const root = document.documentElement;
     root.classList.remove("light", "dark");
     root.classList.add(theme);
-    localStorage.setItem("theme", theme);
+    
+    if (typeof window !== "undefined") {
+      try {
+        localStorage.setItem("theme", theme);
+      } catch (error) {
+        console.warn("Failed to save theme to localStorage:", error);
+      }
+    }
   }, [theme]);
 
   const value = {
