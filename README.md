@@ -1,215 +1,247 @@
-# Oceanic Estimator v2 - Executive Summary
+# Oceanic Estimator v2
 
-**Date:** November 21, 2025  
-**Project:** Upgrade CLabs Margin Calculator (v1) to Oceanic Estimator v2: This version focuses first on Porpoise
-**Objective:** Comprehensive pricing, analysis, and competitive positioning tool  
+**Enterprise pricing calculators for Cetacean Labs products**
 
----
-
-## Project Overview
-
-The Porpoise v2 Calculator is an upgrade to the existing CLabs margin calculator (github.com/ASICP/clabs-margin-calculator-v1) focused exclusively on **Porpoise**, Cetacean Labs' no-code AI training platform. This calculator will serve as the primary tool for sales, finance, and executive teams to:
-
-1. **Generate client-facing pricing quotes** with real-time cost calculations
-2. **Validate internal margins** against targets (72-82% gross margin)
-3. **Compare against 8 major competitors** (AWS, GCP, Azure, Salesforce, Oracle, HuggingFace, Predibase, Replicate)
-4. **Calculate migration costs** for customers switching from competitors
-5. **Simulate growth scenarios** and ROI projections
+**Project:** Unified pricing, analysis, and competitive positioning platform
+**Date:** November 30, 2025
+**Version:** 2.0
 
 ---
 
-## Key Deliverables
+## 📦 Calculators
 
-### 1. Five-Step User Workflow
-- **Step 1:** Product Selection & Scope Definition
-- **Step 2:** Team & Resource Configuration
-- **Step 3:** Usage Scenario Builder
-- **Step 4:** Cost Analysis & Margin Validation (dual view: client vs internal)
-- **Step 5:** Finalize & Simulate (projections, migration calculator, exports)
+### 🐋 Echo RAG Calculator (**NEW - Nov 2025**)
+**Status:** ✅ Phase 1-2 Complete | 🚧 UI Development (Phase 3) In Progress
 
-### 2. Hybrid Competitor Pricing System
-- **Manual curation:** Quarterly reviews of all 8 competitors
-- **Automated validation:** Web scraping for public pricing pages
-- **Customer reporting:** Crowdsource pricing intel from sales conversations
-- **Historical tracking:** Price change history and trend analysis
+Enterprise RAG pricing calculator with competitor intelligence and ROI analysis.
 
-### 3. Internal Margin Analysis
-- **Real-time COGS calculation:** Infrastructure, avatars, Twilio, support
-- **Margin validation:** Against 72-82% target range with status indicators
-- **LTV:CAC tracking:** Customer lifetime value and acquisition cost ratios
-- **Improvement suggestions:** AI-driven recommendations to optimize margins
+**Quick Start:** [`docs/echo/QUICK_START_REPLIT.md`](./docs/echo/QUICK_START_REPLIT.md) - Deploy in 30 minutes
 
-### 4. Competitor Migration Calculator
-- **One-time migration costs:** Data export, onboarding, re-training, team training
-- **ROI analysis:** Annual savings, payback period, 3-year net savings
-- **6-phase migration plan:** Detailed PDF export with timeline and costs
-- **Competitive positioning:** Strengths/weaknesses comparison matrix
+**Key Features:**
+- 5-step pricing workflow
+- Real-time cost calculations
+- Competitor comparison (Glean, Danswer, Perplexity, Hebbia)
+- ROI calculator (1,800%+ typical ROI)
+- Migration cost analysis
+- 5-year growth projections
+- Internal margin validation (82% target)
 
----
+**Differentiators:**
+- 1,300+ connectors (vs 0-100 for competitors)
+- Voice + Visual search interface
+- Two-tier strategy (SaaS + Self-Hosted)
+- 60% cost savings vs Glean
 
-## Business Impact
+**Documentation:**
+- 📘 [`docs/echo/QUICK_START_REPLIT.md`](./docs/echo/QUICK_START_REPLIT.md) - 30-minute deployment guide
+- 📗 [`docs/echo/Echo_RAG_Calculator_Specification_v2.0.md`](./docs/echo/Echo_RAG_Calculator_Specification_v2.0.md) - Full specification
+- 📕 [`docs/echo/COMPONENT_WIREFRAMES.md`](./docs/echo/COMPONENT_WIREFRAMES.md) - UI component specs
+- 📙 [`docs/echo/API_AND_STATE_SPECS.md`](./docs/echo/API_AND_STATE_SPECS.md) - API endpoints & state management
+- 📄 [`docs/echo/Echo_Calculator_Implementation_Summary.md`](./docs/echo/Echo_Calculator_Implementation_Summary.md) - Quick reference
 
-### Porpoise Competitive Advantages (Built Into Calculator)
-1. **40% multi-cloud GPU savings** vs competitors
-2. **Video avatar interviewer** (HeyGen-powered) - unique to Porpoise
-3. **35,000+ pre-loaded templates** for instant value
-4. **27-minute median time-to-trained-model** (vs days for competitors)
-5. **94% success rate** (vs 61% for AWS SageMaker first-time users)
-
-### Expected Outcomes
-- **Deal Velocity:** 20% faster quote-to-close cycle
-- **Margin Protection:** Zero deals below 72% gross margin threshold
-- **Win Rate:** 10% increase in competitive displacement deals
-- **Upsell Rate:** 25% of Starter quotes convert to Professional/Team tiers
-- **Time Savings:** 80% reduction in manual quote creation time
+**Implementation Files:**
+- `docs/echo/echo-rag-calculator-schema.sql` - PostgreSQL database (650 lines, production-ready)
+- `docs/echo/echo-pricing-engine.js` - Pricing calculations (896 lines, 100% tested)
+- `docs/echo/echo-pricing-engine.test.js` - Test suite (12 tests, all passing ✓)
 
 ---
 
-## Technical Architecture
+### 🐬 Porpoise Calculator
+**Status:** 🏗️ Active | 📚 Reference Implementation
 
-### Recommended Stack
-- **Frontend:** React 18+ with Tailwind CSS
-- **Backend:** Node.js 20+ with Express/Fastify
-- **Database:** PostgreSQL 15+ with Prisma ORM
-- **Hosting:** Replit (current) or Vercel/Railway (scalability)
-- **Exports:** jsPDF (PDFs), SheetJS (Excel)
+AI training platform pricing calculator (serves as architectural blueprint).
 
-### Database Schema
-- **9 core tables:** pricing_tiers, usage_pricing, cogs_structure, competitor_pricing, competitor_pricing_history, pricing_validation_queue, calculator_scenarios, migration_analyses, and access control
-- **Seed data:** 4 tiers, 8 competitors, complete COGS structure
-- **JSONB fields:** For flexible usage assumptions, advanced options, migration plans
+**Key Features:**
+- 5-step pricing workflow
+- 8 competitor comparison (AWS, GCP, Azure, Salesforce, Oracle, HF, Predibase, Replicate)
+- 40% multi-cloud GPU savings
+- Video avatar interviewer (HeyGen-powered)
+- 35,000+ templates
+- 72-82% margin targets
 
-### Security & Access Control
-
-| Role | Access Level |
-|------|--------------|
-| **Sales Rep** | Client view only, export quotes, save to CRM |
-| **Sales Manager** | All sales rep + internal margins, competitor data |
-| **Finance** | All views + COGS editing, margin validation, LTV:CAC |
-| **Executive** | All views + competitor pricing updates, strategic reports |
-| **Prospect (Public)** | Steps 1-3 only, no internal data, no competitor details |
+**Documentation:**
+- [`docs/porpoise/porpoise-v2-calculator-spec.md`](./docs/porpoise/porpoise-v2-calculator-spec.md) - Full specification
+- [`docs/porpoise/porpoise-v2-calculator-technical-details.md`](./docs/porpoise/porpoise-v2-calculator-technical-details.md) - Technical implementation
+- [`docs/porpoise/porpoise-v2-executive-summary.md`](./docs/porpoise/porpoise-v2-executive-summary.md) - Executive summary
 
 ---
 
-## Implementation Timeline
+## 🚀 Quick Start
 
-### 8-Week Roadmap
+### For Echo RAG Calculator (Recommended)
 
-| Phase | Duration | Deliverables |
-|-------|----------|--------------|
-| **Phase 1:** Core Calculator | Weeks 1-3 | Backend, database, Steps 1-5, pricing engine |
-| **Phase 2:** Competitor Intelligence | Weeks 4-5 | Hybrid pricing system, migration calculator |
-| **Phase 3:** Integration & Polish | Weeks 6-7 | API integrations, UI/UX, testing |
-| **Phase 4:** Deployment | Week 8 | Launch, training, documentation |
+```bash
+# 1. Review the quick start guide
+open docs/echo/QUICK_START_REPLIT.md
 
-### Critical Path Items
-1. **Week 1:** Database schema & pricing engine (foundational)
-2. **Week 3:** Internal margin analysis (validates business model)
-3. **Week 5:** Migration calculator (competitive differentiator)
-4. **Week 7:** Access control & security (protects internal data)
+# 2. Deploy to Replit (30 minutes)
+# Follow the 10-step guide in QUICK_START_REPLIT.md
 
----
+# 3. Test the backend
+node docs/echo/echo-pricing-engine.test.js
+# Expected: Tests Passed: 12/12 (100%)
+```
 
-## Hybrid Pricing Data Management (Question #5 Answer)
-
-### Recommended Approach: **Hybrid Model**
-
-**Primary Strategy:** Manually Curated Database
-- Quarterly reviews (every 90 days) of all 8 competitors
-- Sources: Official vendor pricing pages, IDC/Forrester reports, customer intel, public contracts
-- Version control with pricing history tracking
-- "Last Updated" timestamp visible to users
-
-**Secondary Strategy:** Automated Validation Layer
-- Web scraping for public pricing pages (validation only, not primary source)
-- Quarterly scraping to flag discrepancies (>10% difference triggers manual review)
-- Alert system when competitors change published rates
-- Validation queue for review and approval
-
-**Why Hybrid > Fully Automated:**
-1. Enterprise pricing is negotiated case-by-case (no single "price")
-2. Volume discounts vary wildly (20-50% range)
-3. APIs don't exist for most competitor platforms
-4. Risk of legal issues scraping competitor sites
-5. Pricing often behind login walls
-
-**Workflow:**
-- **Quarterly Review:** Finance team verifies all 8 competitors every 90 days
-- **Automated Validation:** Scraper runs quarterly to flag changes >10%
-- **Customer Reporting:** Sales team submits pricing intel from conversations
-- **Approval Process:** Changes reviewed and approved before updating calculator
+### Prerequisites
+- Replit account (or Node.js 20+)
+- Neon/Supabase database (free tier works)
+- 30 minutes for initial setup
 
 ---
 
-## Success Metrics
+## 📊 Project Status
 
-### Calculator Performance (Month 3 Targets)
-- **Usage:** 50+ quotes/month
-- **Conversion:** 30% of calculator quotes → deals
-- **Time Savings:** 80% reduction in manual quote creation
-- **Accuracy:** 95% pricing accuracy vs actuals
+| Calculator | Backend | Database | UI | Integration | Status |
+|-----------|---------|----------|-----|-------------|--------|
+| **Echo RAG** | ✅ 100% | ✅ 100% | 🚧 0% | ⏳ 0% | Phase 2 Complete |
+| **Porpoise** | ✅ 100% | ✅ 100% | ✅ 80% | ✅ 60% | Active Development |
 
-### Competitive Intelligence
-- **Data Freshness:** 100% of competitors verified quarterly
-- **Validation Rate:** 90% of flagged pricing changes reviewed within 7 days
-- **Win Rate:** 10% increase in competitive displacement
-
-### Business Impact (Year 1 Targets)
-- **ARR:** $1.24M (per documentation)
-- **Gross Margin:** 72% (scaling to 82% by Year 5)
-- **LTV:CAC:** 13.2:1 blended average
-- **Churn:** <8% weighted average
-
----
-
-## Documents Provided
-
-1. **-v2-calculator-spec.md** (Main specification document)
-   - Complete 5-step user workflow with wireframes
-   - Implementation roadmap (8-week timeline)
-   - Technical stack recommendations
-   - Security & access control
-   - Success metrics & maintenance plan
-
-2. **-v2-calculator-technical-details.md** (Technical implementation)
-   - Complete SQL database schema with seed data
-   - JavaScript pricing calculation functions
-   - UI component library examples
-   - API endpoint specifications
-   - Testing strategy
-
-3. **-v2-executive-summary.md** (This document)
-   - High-level project overview
-   - Business impact summary
-   - Pricing & COGS summary
-   - Hybrid pricing data approach (Question #5 answer)
+### Echo RAG Implementation Progress
+- [x] Database schema (9 tables, seed data)
+- [x] Pricing calculation engine (896 lines)
+- [x] Test suite (100% passing)
+- [x] API specifications (11 endpoints)
+- [x] Component wireframes (5 steps)
+- [x] State management architecture
+- [x] Deployment guides (Replit-optimized)
+- [x] Business plan (35+ pages)
+- [ ] React UI components (Steps 1-5)
+- [ ] API integration
+- [ ] PDF/Excel exports
+- [ ] Production deployment
 
 ---
 
-## Next Steps
+## 🛠️ Technology Stack
 
-### Immediate Actions (This Week)
-1. **Review & Approve:** Stakeholder review of specification documents
-2. **Prioritize Features:** Confirm MVP vs. nice-to-have features
-3. **Assign Resources:** Allocate development team (1-2 developers)
-4. **Confirm Timeline:** Validate 8-week roadmap or adjust
+### Shared Infrastructure
+- **Backend:** Node.js 20+ with Express
+- **Database:** PostgreSQL 15+ (Neon/Supabase)
+- **ORM:** Prisma
+- **Frontend:** React 18 + Vite
+- **Styling:** Tailwind CSS
+- **State:** Zustand
+- **Charts:** Recharts
+- **Hosting:** Replit / Vercel + Railway
 
-### Phase 1 Kickoff (Week 1)
-1. Set up PostgreSQL database on Replit/Supabase
-2. Implement database schema and seed data
-3. Build pricing calculation engine (Node.js)
-4. Create basic React UI shell with navigation
-
-### Questions for Stakeholders
-- **Budget:** Any budget constraints for development or hosting?
-- **Access:** Who needs access to internal margin views? (Finance, Exec, Sales Mgmt)
-- **Integrations:** Which CRM to integrate with? (Salesforce, HubSpot, other)
-- **Branding:** Design preferences for UI (use existing Oceanic brand guidelines?)
-- **Timeline:** Is 8-week timeline acceptable or need to accelerate/decelerate?
-
+### Echo-Specific
+- **Pricing Engine:** Pure JavaScript (no dependencies)
+- **Exports:** jsPDF (PDF), SheetJS (Excel)
+- **Authentication:** JWT + role-based access control
+- **Testing:** Jest / Node.js test runner
 
 ---
 
-**Status:** ✅ Specification Complete - Ready for Stakeholder Review  
-**Last Updated:** November 21, 2025  
-**Version:** 2.0 (Porpoise Focus Only - Other Oceanic products in future versions)
+## 📂 Repository Structure
+
+```
+oceanic-estimator-v2/
+├── docs/
+│   ├── echo/                          # Echo RAG Calculator
+│   │   ├── QUICK_START_REPLIT.md      # 30-min deployment guide
+│   │   ├── Echo_RAG_Calculator_Specification_v2.0.md
+│   │   ├── COMPONENT_WIREFRAMES.md    # UI component specs
+│   │   ├── API_AND_STATE_SPECS.md     # API & state management
+│   │   ├── echo-rag-calculator-schema.sql
+│   │   ├── echo-pricing-engine.js     # Core calculation logic
+│   │   ├── echo-pricing-engine.test.js
+│   │   └── ...                        # Additional docs
+│   │
+│   └── porpoise/                      # Porpoise Calculator
+│       ├── porpoise-v2-calculator-spec.md
+│       ├── porpoise-v2-calculator-technical-details.md
+│       └── porpoise-v2-executive-summary.md
+│
+├── server/                            # Shared backend API
+├── client/                            # Shared frontend
+├── shared/                            # Shared utilities
+├── package.json
+└── README.md                          # This file
+```
+
+---
+
+## 🧪 Testing
+
+### Test Echo Pricing Engine
+```bash
+cd docs/echo
+node echo-pricing-engine.test.js
+```
+
+**Expected Output:**
+```
+========================================
+ECHO RAG CALCULATOR - PRICING EXAMPLES
+========================================
+
+SCENARIO 1: Tech Startup
+...
+SCENARIO 8: Voice & Visual Premium Add-ons
+...
+
+Tests Passed: 12/12 (100%)
+✓ ALL TESTS PASSED
+```
+
+### Test Coverage
+- ✅ Tier determination (4 tests)
+- ✅ Pricing calculations (2 tests)
+- ✅ Annual discount (1 test)
+- ✅ Overages (2 tests)
+- ✅ Margin calculations (3 tests)
+
+---
+
+## 📈 Business Impact
+
+### Echo RAG Calculator
+- **Target Market:** 250-1,500 user enterprises
+- **Typical Deal Size:** $115K-$350K annual
+- **ROI:** 1,800%+ (typical customer)
+- **Payback Period:** <1 month
+- **Gross Margin Target:** 82%
+- **Competitive Savings:** 60% vs Glean, 20% vs Perplexity
+
+### Porpoise Calculator
+- **Target Market:** 10-500 user organizations
+- **Typical Deal Size:** $3.5K-$120K annual
+- **GPU Savings:** 40% vs hyperscalers
+- **Gross Margin Target:** 72-82%
+- **Time to Model:** 27 minutes (vs days)
+
+---
+
+## 📞 Support & Contact
+
+**Project Lead:** c.mcgrath@esteemed.io | 360.701.7353
+
+**GitHub Repository:** https://github.com/ASICP/oceanic-estimator-v2
+
+**Documentation Issues:** Open an issue on GitHub
+
+---
+
+## 🎯 Roadmap
+
+### Q4 2025
+- [x] Echo RAG Calculator - Backend & Logic (Phase 1-2)
+- [ ] Echo RAG Calculator - UI Components (Phase 3)
+- [ ] Echo RAG Calculator - Production Deployment (Phase 4)
+
+### Q1 2026
+- [ ] Additional Cetacean Labs product calculators
+- [ ] Unified dashboard (multi-calculator view)
+- [ ] Advanced analytics & reporting
+- [ ] CRM integrations (Salesforce, HubSpot)
+
+---
+
+## 📄 License
+
+Proprietary - Cetacean Labs © 2025
+
+---
+
+**Last Updated:** November 30, 2025
+**Version:** 2.0 (Echo RAG + Porpoise)
