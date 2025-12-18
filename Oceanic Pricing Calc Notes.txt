@@ -1,0 +1,48 @@
+sublimnar solver
+Orca being quantum ready,….
+
+if you can build in GCP
+you can do it in Azure or AWS
+
+> Adversary is Palantir
+> Base 44, Lovable
+> Replit
+MOAT = DATA, IP, SPEED
+
+FOCUS = who is our client
+FOCUS IS = and what will they pay for what we offer?
+how does that lead to an upsell - bec its not a sale
+unless it is an upsell
+
+-----------------------------------------------------
+
+
+Project Cost Calculator
+
+Initial build: https://github.com/ASICP/test-calculator-repo
+Public site: https://dcnets.com/
+Notebook1: https://notebooklm.google.com/notebook/f8fce015-dbcf-4a57-a3d9-33256d3b6f37?authuser=4
+Notebook2: https://notebooklm.google.com/notebook/6c3f1f47-2d01-4adc-a4bf-d30d3e31fbee
+Oceanic Repo: https://github.com/EsteemedIO/cetacean-oceanic/
+
+A. Brain dump out of Notebook LM
+	1. Oceanic Architecture Summary
+	2. Main service pillars and product lines they represent
+	3. Who is our client and who are our competitors?
+
+B. Grok:
+	1. Create a Oceanic Calc project (brain dump the above)
+	2. Oceanic Products Competitive Analysis: is it really Panitir, Gleen, & Big 4?
+	3. What do they charge and how can we differentate based on data processing, speed to delivery, and IP ? Is there anything else?
+
+C. Claude: 
+	1. Create a Oceanic Calc Project (brain dump the above)
+	2. Mine your own CLabs Notebook
+	3. Ask to update the calculator to incorporate the products above while keeping on top of the original agent thesis.
+	4. Fork the original to a ver2 Repo
+	5. Claude Code: build the ver2 Repo 
+	6. Replit: pull and publish 
+	7. Test & present using a new URL oceaniccalc.dcnets.com 
+
+The CLabs calculator here (https://github.com/ASICP/clabs-margin-calculator-v1) will be updated to v2 with new service portfolio information to establish capabilities, pricing, and margin vs competitors (see the attached files). We will be looking to upgrade the price calculator (dcnets.com) to include the entire Oceanic product line: 1) Define workflow or custom  2) Define a product, for agents keep assemble team 3) Define resources - relevant information to build a client scenario appropriate for the product selected 4)  Set Pricing & Billing: build cost analysis, working example Cost for agents 5) Finalize and simulate - same relevant to the chosen build. Do you have any questions?
+

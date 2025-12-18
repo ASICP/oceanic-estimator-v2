@@ -1,0 +1,226 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dolphin Agent Calculator</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+    <style>
+        body { background-color: #0f172a; color: #e2e8f0; }
+        .card { background-color: #1e293b; border: 1px solid #334155; }
+        .input-dark { background-color: #0f172a; border-color: #334155; color: white; }
+    </style>
+</head>
+<body class="min-h-screen">
+    <div id="app" class="container mx-auto px-4 py-8 max-w-5xl">
+        <header class="mb-8 flex justify-between items-center">
+            <div>
+                <h1 class="text-3xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-cyan-400 to-blue-500">
+                    🐬 Dolphin Estimator
+                </h1>
+                <p class="text-slate-400">Agent Team Orchestration Pricing</p>
+            </div>
+            <div class="px-3 py-1 bg-cyan-900/30 border border-cyan-800 rounded text-cyan-400 text-sm">
+                v2.0 Localhost
+            </div>
+        </header>
+
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            <!-- Left: Inputs -->
+            <div class="lg:col-span-1 space-y-6">
+                <div class="card p-6 rounded-xl shadow-lg">
+                    <h2 class="text-xl font-semibold mb-4 text-cyan-400">Configuration</h2>
+                    
+                    <div class="space-y-4">
+                        <div>
+                            <label class="block text-sm font-medium text-slate-400 mb-1">Scenario Name</label>
+                            <input type="text" v-model="form.name" class="w-full input-dark rounded-lg px-3 py-2 border focus:ring-2 focus:ring-cyan-500 outline-none">
+                        </div>
+
+                        <div>
+                            <label class="block text-sm font-medium text-slate-400 mb-1">Active Agents</label>
+                            <input type="number" v-model.number="form.agents" class="w-full input-dark rounded-lg px-3 py-2 border outline-none">
+                            <p class="text-xs text-slate-500 mt-1">Simultaneous active agents</p>
+                        </div>
+
+                        <div>
+                            <label class="block text-sm font-medium text-slate-400 mb-1">Monthly Runs</label>
+                            <input type="number" v-model.number="form.runs" class="w-full input-dark rounded-lg px-3 py-2 border outline-none">
+                        </div>
+
+                        <div>
+                            <label class="block text-sm font-medium text-slate-400 mb-1">Billing</label>
+                            <select v-model="form.billingPeriod" class="w-full input-dark rounded-lg px-3 py-2 border outline-none">
+                                <option value="monthly">Monthly</option>
+                                <option value="annual">Annual (Save 20%)</option>
+                            </select>
+                        </div>
+
+                        <div>
+                            <label class="block text-sm font-medium text-slate-400 mb-1">Deployment</label>
+                            <select v-model="form.deploymentType" class="w-full input-dark rounded-lg px-3 py-2 border outline-none">
+                                <option value="managed_saas">Managed SaaS</option>
+                                <option value="self_hosted">Self-Hosted</option>
+                            </select>
+                        </div>
+
+                        <div class="pt-4 border-t border-slate-700">
+                            <label class="flex items-center space-x-2 cursor-pointer">
+                                <input type="checkbox" v-model="form.addons.dedicatedVPC" class="form-checkbox text-cyan-500 rounded bg-slate-800 border-slate-600">
+                                <span class="text-sm">Dedicated VPC (+$2k/mo)</span>
+                            </label>
+                        </div>
+                    </div>
+                </div>
+
+                <button @click="calculate" class="w-full bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 text-white font-bold py-3 rounded-xl shadow-lg transition-all transform hover:scale-[1.02]">
+                    Calculate Price
+                </button>
+            </div>
+
+            <!-- Right: Results -->
+            <div class="lg:col-span-2 space-y-6">
+                <!-- Main Pricing Card -->
+                <div v-if="result" class="card p-8 rounded-xl shadow-lg border-t-4 border-t-cyan-500">
+                    <div class="flex justify-between items-start mb-6">
+                        <div>
+                            <div class="text-sm font-bold text-cyan-500 uppercase tracking-wider mb-1">Recommended Tier</div>
+                            <h2 class="text-3xl font-bold text-white">{{ result.pricing.tierName || formatTier(result.recommendedTier) }}</h2>
+                        </div>
+                        <div class="text-right">
+                            <div class="text-sm text-slate-400">Total / Month</div>
+                            <div class="text-4xl font-bold text-white">${{ formatMoney(result.pricing.totalMonthly) }}</div>
+                            <div v-if="form.billingPeriod === 'annual'" class="text-xs text-green-400 mt-1">Billed Annually</div>
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+                        <div class="bg-slate-800/50 p-4 rounded-lg">
+                            <div class="text-xs text-slate-400 uppercase">Subscription</div>
+                            <div class="text-xl font-semibold">${{ formatMoney(result.pricing.subscription) }}</div>
+                        </div>
+                        <div class="bg-slate-800/50 p-4 rounded-lg">
+                            <div class="text-xs text-slate-400 uppercase">Overages</div>
+                            <div class="text-xl font-semibold text-orange-400">${{ formatMoney(result.pricing.overages) }}</div>
+                        </div>
+                        <div class="bg-slate-800/50 p-4 rounded-lg">
+                            <div class="text-xs text-slate-400 uppercase">Add-ons</div>
+                            <div class="text-xl font-semibold">${{ formatMoney(result.pricing.addons) }}</div>
+                        </div>
+                    </div>
+
+                    <!-- Internal Margin View (Simulated for User) -->
+                    <div class="border-t border-slate-700 pt-6 mt-6">
+                        <h3 class="text-sm font-bold text-slate-400 uppercase mb-4 flex items-center">
+                            <span class="w-2 h-2 rounded-full bg-purple-500 mr-2"></span> Internal Analysis
+                        </h3>
+                        
+                        <div class="grid grid-cols-2 gap-8">
+                            <div>
+                                <div class="flex justify-between mb-2 text-sm">
+                                    <span>Gross Margin</span>
+                                    <span :class="result.margin.meetsTarget ? 'text-green-400' : 'text-red-400'">
+                                        {{ result.margin.grossMarginPercent.toFixed(1) }}%
+                                    </span>
+                                </div>
+                                <div class="w-full bg-slate-700 h-2 rounded-full overflow-hidden">
+                                    <div class="h-full bg-purple-500" :style="{ width: result.margin.grossMarginPercent + '%' }"></div>
+                                </div>
+                                <div class="flex justify-between mt-1 text-xs text-slate-500">
+                                    <span>Target: 80%</span>
+                                </div>
+                            </div>
+                            
+                            <div class="space-y-2 text-sm">
+                                <div class="flex justify-between">
+                                    <span class="text-slate-400">COGS (Monthly)</span>
+                                    <span>${{ formatMoney(result.cogs.total) }}</span>
+                                </div>
+                                <div class="flex justify-between text-xs text-slate-500 pl-4">
+                                    <span>Infrastructure</span>
+                                    <span>${{ formatMoney(result.cogs.infrastructure) }}</span>
+                                </div>
+                                <div class="flex justify-between text-xs text-slate-500 pl-4">
+                                    <span>AI/ML Tokens</span>
+                                    <span>${{ formatMoney(result.cogs.aiml) }}</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Empty State -->
+                <div v-else class="card p-12 rounded-xl shadow-lg flex flex-col items-center justify-center text-center h-full min-h-[400px]">
+                    <div class="w-16 h-16 bg-slate-800 rounded-full flex items-center justify-center mb-4">
+                        <span class="text-3xl">🐬</span>
+                    </div>
+                    <h3 class="text-xl font-medium text-white mb-2">Configure Your Team</h3>
+                    <p class="text-slate-400 max-w-sm">
+                        Adjust the settings on the left to generate a quote for your Dolphin Agent Team.
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const { createApp } = Vue
+
+        createApp({
+            data() {
+                return {
+                    form: {
+                        name: 'New Scenario',
+                        agents: 5,
+                        runs: 1000,
+                        billingPeriod: 'monthly',
+                        deploymentType: 'managed_saas',
+                        addons: {
+                            dedicatedVPC: false,
+                            humanSeats: 0
+                        }
+                    },
+                    result: null
+                }
+            },
+            methods: {
+                async calculate() {
+                    try {
+                        const response = await fetch('/api/calculate', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify(this.form)
+                        });
+                        const data = await response.json();
+                        if (data.success) {
+                            this.result = data.data;
+                            // Add nice naming
+                            const tiers = {
+                                'starter_agent': 'Starter Team',
+                                'professional_agent': 'Professional Squad',
+                                'enterprise_agent': 'Enterprise Workforce',
+                                'community_agent': 'Community Self-Hosted',
+                                'enterprise_self_agent': 'Enterprise Self-Hosted'
+                            };
+                            this.result.pricing.tierName = tiers[this.result.recommendedTier];
+                        }
+                    } catch (e) {
+                        console.error(e);
+                        alert('Error calculating price');
+                    }
+                },
+                formatMoney(value) {
+                    return value.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+                },
+                formatTier(id) {
+                    return id.replace(/_/g, ' ').toUpperCase();
+                }
+            },
+            mounted() {
+                this.calculate();
+            }
+        }).mount('#app')
+    </script>
+</body>
+</html>
