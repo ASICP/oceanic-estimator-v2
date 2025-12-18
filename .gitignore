@@ -44,6 +44,8 @@ prisma/*.db-journal
 
 # Archives
 *.zip
+*.tar.gz
 
-# Local Dev Harnesses
-
+# Previous Remote
+server/public
+vite.config.ts.*

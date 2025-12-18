@@ -1,0 +1,42 @@
+~/workspace$ git pull origin main --allow-unrelated-histories
+From https://github.com/ASICP/oceanic-estimator-v2
+ * branch            main       -> FETCH_HEAD
+Auto-merging client/index.html
+CONFLICT (add/add): Merge conflict in client/index.html
+Auto-merging client/src/App.tsx
+CONFLICT (add/add): Merge conflict in client/src/App.tsx
+Auto-merging client/src/components/CostDashboard.tsx
+CONFLICT (add/add): Merge conflict in client/src/components/CostDashboard.tsx
+Auto-merging client/src/components/CostEstimatorWizard.tsx
+CONFLICT (add/add): Merge conflict in client/src/components/CostEstimatorWizard.tsx
+Auto-merging client/src/components/Step5FinalizeSimulate.tsx
+CONFLICT (add/add): Merge conflict in client/src/components/Step5FinalizeSimulate.tsx
+Auto-merging client/src/components/WizardHeader.tsx
+CONFLICT (add/add): Merge conflict in client/src/components/WizardHeader.tsx
+Auto-merging client/src/lib/queryClient.ts
+CONFLICT (add/add): Merge conflict in client/src/lib/queryClient.ts
+Auto-merging client/src/utils/pdfGenerator.ts
+CONFLICT (add/add): Merge conflict in client/src/utils/pdfGenerator.ts
+Auto-merging package.json
+CONFLICT (add/add): Merge conflict in package.json
+Auto-merging server/index.ts
+CONFLICT (add/add): Merge conflict in server/index.ts
+Auto-merging server/routes.ts
+CONFLICT (add/add): Merge conflict in server/routes.ts
+Auto-merging shared/schema.ts
+CONFLICT (add/add): Merge conflict in shared/schema.ts
+Automatic merge failed; fix conflicts and then commit the result.
+~/workspace$ git merge --abort
+fatal: There is no merge to abort (MERGE_HEAD missing).
+~/workspace$ # Force push your current code to GitHub (overwrites the old code)
+git push -u origin main --force
+Enumerating objects: 473, done.
+Counting objects: 100% (473/473), done.
+Delta compression using up to 8 threads
+Compressing objects: 100% (467/467), done.
+Writing objects: 100% (473/473), 14.43 MiB | 5.61 MiB/s, done.
+Total 473 (delta 258), reused 0 (delta 0), pack-reused 0 (from 0)
+remote: Resolving deltas: 100% (258/258), done.
+To https://github.com/ASICP/oceanic-estimator-v2.git
+ + f0c5c4b...bcf36af main -> main (forced update)
+branch 'main' set up to track 'origin/main'.

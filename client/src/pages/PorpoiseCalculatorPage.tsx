@@ -1,0 +1,297 @@
+import { useState, useEffect } from "react";
+import { useQuery } from "@tanstack/react-query";
+import { useLocation } from "wouter";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { ChevronLeft, ChevronRight, Calculator, Eye, EyeOff } from "lucide-react";
+import { ThemeToggle } from "@/components/ThemeToggle";
+import ProductSelectionStep from "@/components/porpoise/ProductSelectionStep";
+import TeamConfigurationStep from "@/components/porpoise/TeamConfigurationStep";
+import ResultsStep from "@/components/porpoise/ResultsStep";
+import ScenarioSimulationStep from "@/components/porpoise/ScenarioSimulationStep";
+
+export interface PorpoiseFormData {
+  // Step 1: Product Selection
+  tierId: 'starter' | 'professional' | 'team' | 'enterprise';
+  billingPeriod: 'monthly' | 'annual';
+  deploymentType: 'cloud' | 'byoc' | 'air_gap';
+  ssoRequired: boolean;
+  whiteLabelAvatars: boolean;
+  
+  // Step 2: Team & Resource Configuration
+  numUsers: number;
+  concurrentJobs: number;
+  storageGb: number;
+  gpuHoursMonthly: number;
+  apiCallsMonthly: number;
+  numAvatars: number;
+}
+
+const INITIAL_FORM_DATA: PorpoiseFormData = {
+  tierId: 'starter',
+  billingPeriod: 'annual',
+  deploymentType: 'cloud',
+  ssoRequired: false,
+  whiteLabelAvatars: false,
+  numUsers: 10,
+  concurrentJobs: 3,
+  storageGb: 10,
+  gpuHoursMonthly: 20,
+  apiCallsMonthly: 5000,
+  numAvatars: 0
+};
+
+export default function PorpoiseCalculatorPage() {
+  const [location] = useLocation();
+  const [currentStep, setCurrentStep] = useState(1);
+  const [formData, setFormData] = useState<PorpoiseFormData>(INITIAL_FORM_DATA);
+  const [viewMode, setViewMode] = useState<'client' | 'internal'>('client');
+  const [scenarioLoaded, setScenarioLoaded] = useState(false);
+  const [savedMigrationData, setSavedMigrationData] = useState<any>(null);
+  
+  // Extract scenario ID from URL query params
+  const getScenarioIdFromUrl = () => {
+    const params = new URLSearchParams(window.location.search);
+    return params.get('scenario');
+  };
+  
+  // Load scenario from URL if present
+  const scenarioId = getScenarioIdFromUrl();
+  const { data: savedScenario, isLoading: isLoadingScenario } = useQuery({
+    queryKey: ['/api/porpoise/scenarios', scenarioId],
+    enabled: !!scenarioId && !scenarioLoaded,
+    queryFn: async () => {
+      const response = await fetch(`/api/porpoise/scenarios/${scenarioId}`, {
+        credentials: 'include'
+      });
+      if (!response.ok) {
+        throw new Error('Failed to load scenario');
+      }
+      return response.json();
+    }
+  });
+  
+  // Hydrate form data when scenario loads
+  useEffect(() => {
+    if (savedScenario && !scenarioLoaded) {
+      // Reconstruct form data from saved scenario
+      const loadedData: PorpoiseFormData = {
+        tierId: savedScenario.tierId as any,
+        billingPeriod: savedScenario.billingPeriod as any,
+        deploymentType: savedScenario.advancedOptions?.deploymentType || 'cloud',
+        ssoRequired: savedScenario.advancedOptions?.ssoRequired || false,
+        whiteLabelAvatars: savedScenario.advancedOptions?.whiteLabelAvatars || false,
+        numUsers: savedScenario.numUsers,
+        concurrentJobs: savedScenario.concurrentJobs,
+        storageGb: parseFloat(savedScenario.storageGb),
+        gpuHoursMonthly: parseFloat(savedScenario.gpuHoursMonthly),
+        apiCallsMonthly: savedScenario.apiCallsMonthly,
+        numAvatars: savedScenario.numAvatars
+      };
+      
+      setFormData(loadedData);
+      
+      // Persist migration data in component state so it survives navigation
+      if (savedScenario.advancedOptions?.migrationData) {
+        setSavedMigrationData(savedScenario.advancedOptions.migrationData);
+      }
+      
+      setScenarioLoaded(true);
+      // Navigate to results step to show loaded scenario
+      setCurrentStep(3);
+    }
+  }, [savedScenario, scenarioLoaded]);
+  
+  const updateFormData = (updates: Partial<PorpoiseFormData>) => {
+    setFormData(prev => ({ ...prev, ...updates }));
+  };
+  
+  const handleNext = () => {
+    if (currentStep < 4) {
+      setCurrentStep(prev => prev + 1);
+    }
+  };
+  
+  const handleBack = () => {
+    if (currentStep > 1) {
+      setCurrentStep(prev => prev - 1);
+    }
+  };
+  
+  const toggleViewMode = () => {
+    setViewMode(prev => prev === 'client' ? 'internal' : 'client');
+  };
+  
+  return (
+    <div className="min-h-screen bg-background">
+      {/* Loading Scenario Indicator */}
+      {isLoadingScenario && (
+        <div className="fixed inset-0 bg-background/80 backdrop-blur-sm z-50 flex items-center justify-center">
+          <Card className="w-96">
+            <CardContent className="pt-6">
+              <div className="text-center space-y-3">
+                <div className="text-lg font-semibold">Loading Saved Scenario...</div>
+                <div className="text-sm text-muted-foreground">Scenario ID: {scenarioId}</div>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      )}
+      
+      {/* Header */}
+      <header className="border-b">
+        <div className="container mx-auto px-4 py-4">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <Calculator className="w-8 h-8 text-primary" />
+              <div>
+                <h1 className="text-2xl font-bold">Oceanic Estimator</h1>
+                <p className="text-sm font-bold">Porpoise Calculator</p>
+              </div>
+            </div>
+            
+            {/* Right side controls */}
+            <div className="flex items-center gap-2">
+              {/* View Mode Toggle */}
+              <Button
+                variant="outline"
+                onClick={toggleViewMode}
+                className="gap-2"
+                data-testid="button-toggle-view-mode"
+              >
+                {viewMode === 'client' ? (
+                  <>
+                    <EyeOff className="w-4 h-4" />
+                    Client View
+                  </>
+                ) : (
+                  <>
+                    <Eye className="w-4 h-4" />
+                    Internal View
+                  </>
+                )}
+              </Button>
+              
+              {/* Theme Toggle */}
+              <ThemeToggle />
+            </div>
+          </div>
+        </div>
+      </header>
+      
+      {/* Main Content */}
+      <main className="container mx-auto px-4 py-8">
+        <div className="max-w-5xl mx-auto">
+          {/* Step Indicator */}
+          <div className="mb-8">
+            <div className="flex items-center justify-between mb-2">
+              {[1, 2, 3, 4].map((step) => (
+                <div key={step} className="flex items-center flex-1">
+                  <div className="flex items-center gap-2">
+                    <div
+                      className={`w-8 h-8 rounded-full flex items-center justify-center font-semibold ${
+                        currentStep === step
+                          ? 'bg-primary text-primary-foreground'
+                          : currentStep > step
+                          ? 'bg-primary/20 text-primary'
+                          : 'bg-muted text-muted-foreground'
+                      }`}
+                      data-testid={`step-indicator-${step}`}
+                    >
+                      {step}
+                    </div>
+                    <span className={`text-sm font-medium ${
+                      currentStep >= step ? 'text-foreground' : 'text-muted-foreground'
+                    }`}>
+                      {step === 1 && 'Product Selection'}
+                      {step === 2 && 'Configuration'}
+                      {step === 3 && 'Results'}
+                      {step === 4 && 'Simulate'}
+                    </span>
+                  </div>
+                  {step < 4 && (
+                    <div className={`flex-1 h-0.5 mx-4 ${
+                      currentStep > step ? 'bg-primary' : 'bg-muted'
+                    }`} />
+                  )}
+                </div>
+              ))}
+            </div>
+          </div>
+          
+          {/* Step Content */}
+          <Card>
+            <CardContent className="p-6">
+              {currentStep === 1 && (
+                <ProductSelectionStep
+                  formData={formData}
+                  updateFormData={updateFormData}
+                />
+              )}
+              
+              {currentStep === 2 && (
+                <TeamConfigurationStep
+                  formData={formData}
+                  updateFormData={updateFormData}
+                />
+              )}
+              
+              {currentStep === 3 && (
+                <ResultsStep
+                  formData={formData}
+                  viewMode={viewMode}
+                />
+              )}
+              
+              {currentStep === 4 && (
+                <ScenarioSimulationStep
+                  formData={formData}
+                  viewMode={viewMode}
+                  savedMigrationData={savedScenario?.advancedOptions?.migrationData || savedMigrationData}
+                />
+              )}
+            </CardContent>
+          </Card>
+          
+          {/* Navigation Buttons */}
+          <div className="flex items-center justify-between mt-6">
+            <Button
+              variant="outline"
+              onClick={handleBack}
+              disabled={currentStep === 1}
+              className="gap-2"
+              data-testid="button-back"
+            >
+              <ChevronLeft className="w-4 h-4" />
+              Back
+            </Button>
+            
+            <div className="text-sm text-muted-foreground">
+              Step {currentStep} of 4
+            </div>
+            
+            {currentStep < 4 ? (
+              <Button
+                onClick={handleNext}
+                className="gap-2"
+                data-testid="button-next"
+              >
+                Next
+                <ChevronRight className="w-4 h-4" />
+              </Button>
+            ) : (
+              <Button
+                variant="outline"
+                onClick={() => setCurrentStep(1)}
+                data-testid="button-start-over"
+              >
+                Start Over
+              </Button>
+            )}
+          </div>
+        </div>
+      </main>
+    </div>
+  );
+}
