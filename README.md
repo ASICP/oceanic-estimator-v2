@@ -9,6 +9,29 @@
 
 ## 📦 Calculators
 
+### 🐋 Orca Intelligence Calculator v2.0 (**NEW**)
+**Status:** ✅ Beta Release | ROI Wizard | SAFLA Analytics
+
+Enterprise AI & Quantum Optimization pricing calculator.
+
+**Location:** [`/orca-v2/app/`](./orca-v2/app/)
+
+**Key Features:**
+- 4-Step ROI Wizard (Profile -> Workflow -> Config -> Analysis)
+- Human vs Orca Baseline Comparison (600x Speedup)
+- SAFLA Learning Curve Visualization
+- PDF Proposal Export
+
+**Quick Start:**
+```bash
+cd orca-v2/app
+npm install
+node server/index.js
+# Browser: http://localhost:3001
+```
+
+---
+
 ### 🐬 Dolphin Agent Calculator v2.2 (**NEW**)
 **Status:** ✅ Production Ready | Wizard UI | PDF Export
 
