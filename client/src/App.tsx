@@ -7,6 +7,7 @@ import { ThemeProvider } from "@/components/ThemeProvider";
 import CostEstimatorWizard from "@/components/CostEstimatorWizard";
 import PorpoiseCalculatorPage from "@/pages/PorpoiseCalculatorPage";
 import GitHubSyncPage from "@/pages/GitHubSyncPage";
+import BlueWhaleCalculatorPage from "@/pages/BlueWhaleCalculatorPage";
 import NotFound from "@/pages/not-found";
 
 function Router() {
@@ -14,6 +15,7 @@ function Router() {
     <Switch>
       <Route path="/" component={PorpoiseCalculatorPage} />
       <Route path="/estimator-v1" component={CostEstimatorWizard} />
+      <Route path="/blue-whale" component={BlueWhaleCalculatorPage} />
       <Route path="/github-sync" component={GitHubSyncPage} />
       <Route component={NotFound} />
     </Switch>
