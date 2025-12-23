@@ -46,3 +46,11 @@ If `npm install` fails, run:
 rm -rf node_modules package-lock.json
 npm install
 ```
+
+**"Address already in use (EADDRINUSE)"**
+If `npm run start` fails with "address already in use", an old server process is stuck. Kill it with:
+```bash
+killall -9 node
+# Then try starting again
+npm run start
+```
