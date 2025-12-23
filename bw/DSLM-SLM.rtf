@@ -1,0 +1,209 @@
+{\rtf1\ansi\ansicpg1252\cocoartf2822
+\cocoatextscaling0\cocoaplatform0{\fonttbl\f0\fswiss\fcharset0 Helvetica;}
+{\colortbl;\red255\green255\blue255;}
+{\*\expandedcolortbl;;}
+\margl1440\margr1440\vieww11520\viewh8400\viewkind0
+\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\partightenfactor0
+
+\f0\fs24 \cf0 \
+\pard\tx720\tx1440\tx1854\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\partightenfactor0
+\cf0 DSLM = Domain specific Language Model\
+\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\partightenfactor0
+\cf0 SLM   = Small Language Model  (also subject matter specifc)\
+\
+\
+## Pros of DSLMs\
+\
+**Better alignment:** They're often more aligned because they're trained on curated, domain-specific data, which reduces exposure to harmful or irrelevant content. The narrower scope makes it easier to control outputs and ensure they meet domain standards.\
+\
+**Efficiency:** Much smaller model size means lower computational costs, faster inference, and ability to run on edge devices or consumer hardware without expensive GPUs.\
+\
+**Performance in domain:** Can actually outperform larger general models within their specific domain because all their capacity is focused on one area rather than trying to be a generalist.\
+\
+**Reduced hallucination:** Less likely to generate confident-sounding but incorrect information within their domain since they're not trying to answer questions outside their expertise.\
+\
+**Privacy & deployment:** Easier to deploy on-premises or locally, which is crucial for sensitive domains like healthcare or legal work where data privacy is paramount.\
+\
+**Cost-effective fine-tuning:** Cheaper and faster to train, fine-tune, and iterate on compared to large models.\
+\
+## Cons of DSLMs\
+\
+**Limited scope:** Can't handle queries outside their domain at all, or handles them poorly. If a user needs versatility, they're stuck.\
+\
+**Less emergent capabilities:** Smaller models lack some of the reasoning, few-shot learning, and generalization abilities that emerge in larger models.\
+\
+**Requires domain expertise:** Creating good training data and evaluating performance requires deep domain knowledge, which can be a bottleneck.\
+\
+**Multiple models needed:** Organizations often need several DSLMs for different tasks rather than one general model, increasing complexity.\
+\
+**Less robust:** May be more brittle to edge cases or unusual phrasings compared to models that have seen more diverse data.\
+\
+**Harder knowledge updates:** Updating a DSLM's knowledge often requires retraining rather than just prompting differently.\
+\
+The "more aligned" aspect really comes down to the focused training making it easier to ensure outputs meet specific standards and reduce unwanted behaviors.\
+\
+\
+I'll search for academic papers on domain-specific small language models and their alignment properties.Let me search more specifically for papers about alignment in small language models:Great! I found several relevant academic papers. Here are the key papers on domain-specific/small language model alignment:\
+\
+## Papers Specifically on Domain-Specific SLM Alignment\
+\
+**1. "ClimaEmpact: Domain-Aligned Small Language Models and Datasets for Extreme Weather Analytics"** (April 2025)\
+- Proposes Extreme Weather Reasoning-Aware Alignment (EWRA), a method that enhances small language models by incorporating structured reasoning paths derived from LLMs, showing that the approach guides SLMs to output domain-aligned responses and surpass task-specific models\
+- arXiv: 2504.19066\
+\
+**2. "Fine-Tuning Small Language Models for Domain-Specific AI: An Edge AI Perspective"** (March 2025)\
+- Introduces the Shakti Small Language Models (100M, 250M, and 500M parameters) combining efficient architectures, quantization techniques, and responsible AI principles, providing insights into their design philosophy, training pipelines, and benchmark performance on specialized domains including healthcare, finance, and legal\
+- arXiv: 2503.01933\
+\
+**3. "InfiAlign: A Scalable and Sample-Efficient Framework for Aligning LLMs to Enhance Reasoning Capabilities"** (August 2025)\
+- Proposes a novel post-training framework that enhances reasoning capabilities using minimal data, particularly beneficial for enhancing the reasoning abilities of small and medium language models through scalable data sampling and balanced supervised fine-tuning\
+- arXiv: 2508.05496\
+\
+## General LLM Alignment Papers (Applicable to SLMs)\
+\
+**4. "Alignment and Safety in Large Language Models: Safety Mechanisms, Training Paradigms, and Emerging Challenges"** (July 2025)\
+- Comprehensive survey covering alignment techniques including Direct Preference Optimization, Constitutional AI, and alignment uncertainty quantification, showing that while supervised fine-tuning enables basic instruction-following, preference-based methods offer more flexibility\
+- arXiv: 2507.19672\
+\
+**5. "Fine-tuning Aligned Language Models Compromises Safety, Even When Users Do Not Intend To!"** (October 2023)\
+- Red teaming studies find that safety alignment of LLMs can be compromised by fine-tuning with only a few adversarially designed training examples, and even benign fine-tuning can inadvertently degrade safety alignment\
+- arXiv: 2310.03693\
+\
+**6. "Lisa: Lazy Safety Alignment for Large Language Models against Harmful Fine-tuning"** (May 2024)\
+- Shows that jail-broken effects can be mitigated by separating states in the fine-tuning stage to optimize alignment and user datasets, introducing a proximal term to constrain drift\
+- arXiv: 2405.18641\
+\
+**7. "Fine-tuning large language models for domain adaptation"** (March 2025) - Nature npj Computational Materials\
+- Explores fine-tuning strategies including Continued Pretraining, Supervised Fine-Tuning, and preference-based optimization approaches like DPO and ORPO, finding that model merging can lead to emergent capabilities that surpass individual parent models\
+\
+These papers collectively suggest that DSLMs can indeed be better aligned when properly trained, but the alignment advantage comes from careful data curation, domain-specific training approaches, and the reduced attack surface of smaller, focused models.\
+\
+I'll search for academic papers on hallucinations in LLMs and mitigation strategies, particularly those applicable to small language models.Let me search more specifically for academic papers on hallucination detection and mitigation techniques:Now let me search for papers specifically on RAG and mitigation techniques:Let me search for more specific papers on knowledge verification and confidence measures:Excellent! I've found comprehensive research on hallucinations in LLMs and mitigation strategies. Let me provide you with a well-organized summary of the key papers:\
+\
+## Comprehensive Survey Papers on Hallucinations\
+\
+**1. "A Survey on Hallucination in Large Language Models: Principles, Taxonomy, Challenges, and Open Questions"** (November 2024)\
+- Provides an innovative taxonomy of hallucination in LLMs and delves into factors contributing to hallucinations, presents a thorough overview of hallucination detection methods and benchmarks, and discusses methodologies for mitigating LLM hallucinations\
+- arXiv: 2311.05232\
+\
+**2. "A comprehensive survey of hallucination mitigation techniques in large language models"** (Referenced in Building Guardrails paper)\
+- Comprehensive survey covering hallucination mitigation techniques across multiple categories\
+- arXiv: 2401.01313\
+\
+**3. "Hallucination Mitigation for Retrieval-Augmented Large Language Models: A Review"** (March 2025)\
+- Focuses on hallucination in retrieval-augmented LLMs, examining causes from different sub-tasks in retrieval and generation phases, providing a comprehensive overview of corresponding hallucination mitigation techniques\
+- Published in Mathematics journal\
+\
+**4. "Mitigating LLM Hallucinations: A Comprehensive Review of Techniques and Architectures"** (May 2025)\
+- Presents a systematic review analyzing contemporary approaches for detecting and mitigating hallucinations in LLMs, categorizing them into detection-based, prevention-based, and correction-based methods, evaluating their performance across three key dimensions: accuracy improvement (15-82% reduction in hallucinations), computational overhead (5-300ms latency impact), and implementation complexity\
+\
+## Hallucination Detection Methods\
+\
+**5. "Hallucination Detection in LLMs: Fast and Memory-Efficient Fine-Tuned Models"** (September 2024)\
+- Presents a novel method that allows for fast and memory-friendly training of LLM ensembles to detect hallucinations, showing that resulting ensembles can detect hallucinations and are a viable approach in practice as only one GPU is needed for training and inference\
+- arXiv: 2409.02976\
+\
+**6. "Unsupervised Real-Time Hallucination Detection based on the Internal States of Large Language Models"** (June 2024)\
+- Introduces MIND, an unsupervised training framework that leverages the internal states of LLMs for real-time hallucination detection without requiring manual annotations, outperforming existing state-of-the-art methods\
+- arXiv: 2403.06448\
+\
+**7. "Hallucination Detection in Large Language Models with Metamorphic Relations"** (February 2025)\
+- Presents MetaQA, a self-contained hallucination detection approach that leverages metamorphic relation and prompt mutation, operating without external resources and compatible with both open-source and closed-source LLMs, outperforming SelfCheckGPT with superiority margins ranging from 0.041-0.113 for precision, 0.143-0.430 for recall, and 0.154-0.368 for F1-score\
+- arXiv: 2502.15844\
+\
+**8. "Detecting Hallucinations in Authentic LLM-Human Interactions"** (October 2025)\
+- Introduces AuthenHallu, the first hallucination detection benchmark built entirely from authentic LLM-human interactions, with statistical analysis showing hallucinations occur in 31.4% of query-response pairs, increasing to 60.0% in challenging domains such as Math & Number Problems\
+- arXiv: 2510.10539\
+\
+**9. "LLM Hallucination Detection: HSAD"** (Recent)\
+- Proposes a hallucination detection method based on frequency-domain analysis of hidden layer temporal signals, treating the LLM's reasoning process as a cognitive journey and applying Fast Fourier Transform to construct spectral features for capturing anomalies during reasoning\
+- arXiv: 2509.23580\
+\
+## RAG-Based Mitigation Techniques\
+\
+**10. "Reducing hallucination in structured outputs via Retrieval-Augmented Generation"** (April 2024)\
+- Shows that implementation of RAG significantly reduces hallucinations in output and improves generalization in out-of-domain settings, demonstrating that using a small, well-trained retriever encoder can reduce the size of the accompanying LLM\
+- arXiv: 2404.08189\
+\
+**11. "MultiRAG: A Knowledge-guided Framework for Mitigating Hallucination in Multi-source Retrieval Augmented Generation"** (August 2025)\
+- Proposes MultiRAG to mitigate hallucination in multi-source retrieval-augmented generation through knowledge-guided approaches, introducing multi-source line graphs for efficient aggregation and multi-level confidence calculation to ensure reliability\
+- arXiv: 2508.03553\
+\
+**12. "LRP4RAG: Detecting Hallucinations in Retrieval-Augmented Generation via Layer-wise Relevance Propagation"** (June 2025)\
+- Proposes LRP4RAG based on Layer-wise Relevance Propagation algorithm for detecting hallucinations in RAG, utilizing LRP to compute relevance between input and output of the RAG generator, demonstrating that LRP4RAG outperforms existing baselines\
+- arXiv: 2408.15533\
+\
+**13. "Rowen: Adaptive Retrieval-Augmented Generation for Hallucination Mitigation in LLMs"** (October 2025)\
+- Proposes Rowen (Retrieve only when needed) framework that leverages LLMs' Chain-of-Thought reasoning to generate an initial response, employs a consistency-based hallucination detection module to assess reliability, and if high uncertainties are found, refines the answer using external information via retrieval augmentation\
+- arXiv: 2402.10612\
+\
+**14. "Train for Truth, Keep the Skills: Binary Retrieval-Augmented Reward Mitigates Hallucinations"** (October 2025)\
+- Proposes an online reinforcement learning method using a novel binary retrieval-augmented reward, achieving a 39.3% reduction in hallucination rates while maintaining model performance on downstream tasks\
+- arXiv: 2510.17733\
+\
+**15. "Retrieval Augmentation Reduces Hallucination in Conversation"** (April 2021)\
+- Explores neural-retrieval-in-the-loop architectures for knowledge-grounded dialogue, studying various types of architectures with multiple components including retrievers, rankers, and encoder-decoders with the goal of maximizing knowledgeability while retaining conversational ability\
+- arXiv: 2104.07567\
+\
+**16. "ReDeEP: Detecting Hallucinations in Retrieval-Augmented Generation via Mechanistic Interpretability"** (October 2024)\
+- Discovers hallucinations occur when Knowledge FFNs in LLMs overemphasize parametric knowledge while Copying Heads fail to effectively retain or integrate external knowledge, proposing ReDeEP to detect hallucinations by decoupling LLM's utilization of external context and parametric knowledge\
+\
+**17. "Hybrid Retrieval for Hallucination Mitigation in Large Language Models: A Comparative Analysis"** (February 2025)\
+- Proposes a hybrid retrieval module that incorporates query expansion and combines sparse and dense retrievers, showing that the hybrid retriever achieves the highest accuracy, lowest hallucination rate, and lowest rejection rate compared to sparse and dense retrievers alone\
+- arXiv: 2504.05324\
+\
+## Guardrails and Verification Systems\
+\
+**18. Guardrails AI Provenance Validators**\
+- Guardrails AI provenance validators leverage embeddings from RAG systems to detect and limit hallucinations from LLMs that depart from supplied source documents, removing hallucinated sentences when detected\
+\
+**19. NVIDIA NeMo Guardrails & Granite Guardian**\
+- Granite Guardian models (2B and 8B) provide comprehensive coverage from multi-dimensional risks and specialize in detecting hallucination in RAG pipelines, while NVIDIA NeMo Guardrails is an open-source toolkit enabling 89% accurate synthesis and customizable safety rules\
+\
+**20. AWS Bedrock Guardrails**\
+- Amazon Bedrock Guardrails offer hallucination detection with contextual grounding checks that validate LLM outputs against contextual relevance to detect ungrounded or irrelevant responses, achieving 97% detection rates when combined with NVIDIA NeMo's guardrails while maintaining sub-200ms latency\
+\
+**21. "Multi-Modal Fact-Verification Framework for Reducing Hallucinations"** (October 2025)\
+- Developed a fact-verification framework that cross-checks LLM outputs against multiple knowledge sources including structured databases, live web searches, and academic literature, reducing hallucinations by 67% with 89% satisfactory ratings from domain experts\
+- arXiv: 2510.22751\
+\
+**22. "Hybrid Fact-Checking that Integrates Knowledge Graphs, Large Language Models, and Search-Based Retrieval Agents"** (Recent)\
+- Full pipeline combining KG-first inference with web fallback led to highest overall performance, achieving F1 score of approximately 0.927 on FEVER benchmark, demonstrating that combining structured knowledge with web search improves fact verification\
+- arXiv: 2511.03217\
+\
+## Confidence and Uncertainty Quantification\
+\
+**23. "Factual Confidence of LLMs: on Reliability and Robustness of Current Estimators"** (June 2024)\
+- Experiments across a series of LLMs indicate that trained hidden-state probes provide the most reliable confidence estimates, finding that confidence of LLMs is often unstable across semantically equivalent inputs, suggesting much room for improvement of stability of models' parametric knowledge\
+- arXiv: 2406.13415\
+\
+**24. "Mind the Confidence Gap: Overconfidence, Calibration, and Distractor Effects"** (June 2025)\
+- Reveals widespread overconfidence across model families and sizes, demonstrating that incorporating distractors can substantially mitigate miscalibration, achieving relative accuracy improvements up to 460% and ECE reductions up to 90%\
+- arXiv: 2502.11028\
+\
+**25. "Learning to Route LLMs with Confidence Tokens"** (June 2025)\
+- Demonstrates that confidence tokens show significant improvements in downstream routing and rejection learning tasks compared to conventional approaches such as verbalizing confidence and examining token probabilities, routing queries based on model confidence of each LLM output answer\
+- arXiv: 2410.13284\
+\
+**26. "Rethinking LLM Parametric Knowledge as Post-retrieval Confidence"** (September 2025)\
+- Proposes a confidence detection model based on LLMs' internal hidden states to quantify how retrieved contexts enhance the model's confidence, introducing Confidence-Based Dynamic Retrieval that adaptively triggers retrieval based on the LLM's initial confidence\
+- arXiv: 2509.06472\
+\
+## Small Language Models and Collaboration\
+\
+**27. "A Survey on Collaborative Mechanisms Between Large and Small Language Models"** (May 2025)\
+- Discusses using confidence scores to determine whether to invoke an LLM for conditional inference, and addresses knowledge conflicts between LLMs and SLMs through mechanisms like RAG for external verification or fusion strategies that weigh confidence and recency\
+- arXiv: 2505.07460\
+\
+## Practical Strategies Summary\
+\
+The research shows multiple effective approaches for minimizing hallucinations applicable to SLMs:\
+\
+1. **RAG Systems**: Most effective single technique, with hybrid retrievers showing best results\
+2. **Guardrails**: Real-time detection and correction systems (Granite Guardian, NeMo, AWS Bedrock)\
+3. **Confidence Estimation**: Using internal hidden states and confidence tokens for uncertainty quantification\
+4. **Prompt Engineering**: Instructing models to say "I don't know" and requesting citations\
+5. **Multi-source Verification**: Cross-checking against knowledge graphs, databases, and web sources\
+6. **Ensemble Methods**: Using multiple models or sampling strategies for consistency checking\
+\
+The combined approach (RAG, RLHF, and guardrails) has shown up to 96% reduction in hallucinations compared to baseline models.}

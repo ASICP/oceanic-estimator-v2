@@ -8,12 +8,14 @@ import CostEstimatorWizard from "@/components/CostEstimatorWizard";
 import PorpoiseCalculatorPage from "@/pages/PorpoiseCalculatorPage";
 import GitHubSyncPage from "@/pages/GitHubSyncPage";
 import BlueWhaleCalculatorPage from "@/pages/BlueWhaleCalculatorPage";
+import CalculatorLandingPage from "@/pages/CalculatorLandingPage";
 import NotFound from "@/pages/not-found";
 
 function Router() {
   return (
     <Switch>
-      <Route path="/" component={PorpoiseCalculatorPage} />
+      <Route path="/" component={CalculatorLandingPage} />
+      <Route path="/porpoise" component={PorpoiseCalculatorPage} />
       <Route path="/estimator-v1" component={CostEstimatorWizard} />
       <Route path="/blue-whale" component={BlueWhaleCalculatorPage} />
       <Route path="/github-sync" component={GitHubSyncPage} />

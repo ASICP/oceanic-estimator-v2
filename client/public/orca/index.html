@@ -1,0 +1,834 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Orca Intelligence Estimator</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+    <script src="https://unpkg.com/@popperjs/core@2"></script>
+    <script src="https://unpkg.com/tippy.js@6"></script>
+    <link rel="stylesheet" href="https://unpkg.com/tippy.js@6/animations/scale.css" />
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+    <style>
+        body {
+            background-color: #020617;
+            color: #e2e8f0;
+            font-family: 'Inter', sans-serif;
+        }
+
+        .card {
+            background-color: #0f172a;
+            border: 1px solid #1e293b;
+        }
+
+        .input-dark {
+            background-color: #020617;
+            border-color: #1e293b;
+            color: white;
+        }
+
+        .tier-card:hover {
+            border-color: #6366f1;
+            transform: translateY(-2px);
+        }
+
+        .tier-card.active {
+            border-color: #6366f1;
+            background-color: rgba(99, 102, 241, 0.1);
+        }
+
+        .gradient-text {
+            background: linear-gradient(to right, #6366f1, #a855f7);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        /* Orca specific gradient */
+        .orca-gradient {
+            background: linear-gradient(135deg, #0f172a 0%, #1e1b4b 100%);
+        }
+
+        .fade-enter-active,
+        .fade-leave-active {
+            transition: opacity 0.3s ease;
+        }
+
+        .fade-enter-from,
+        .fade-leave-to {
+            opacity: 0;
+        }
+
+        .info-button {
+            display: inline-flex;
+            width: 16px;
+            height: 16px;
+            border-radius: 50%;
+            background-color: #334155;
+            color: #94a3b8;
+            font-size: 10px;
+            align-items: center;
+            justify-content: center;
+            margin-left: 6px;
+            cursor: help;
+        }
+
+        @media print {
+            body {
+                background-color: white !important;
+                color: black !important;
+            }
+
+            .no-print {
+                display: none !important;
+            }
+
+            .card {
+                border: 1px solid #ccc !important;
+                box-shadow: none !important;
+                background-color: white !important;
+                color: black !important;
+            }
+
+            .text-white,
+            .text-slate-200,
+            .text-slate-300,
+            .text-slate-400,
+            .text-slate-500,
+            .text-indigo-400,
+            .text-emerald-400,
+            .text-purple-400 {
+                color: black !important;
+            }
+
+            /* Preserve chart visibility if possible, or hide dark backgrounds */
+            canvas {
+                filter: invert(0);
+            }
+
+            button {
+                display: none !important;
+            }
+
+            h1,
+            h2,
+            h3 {
+                color: black !important;
+            }
+        }
+    </style>
+</head>
+
+<body class="min-h-screen text-slate-200 bg-slate-950">
+    <div id="app" class="container mx-auto px-4 py-8 max-w-5xl">
+
+        <!-- Header -->
+        <header
+            class="mb-10 flex justify-between items-center bg-slate-900/50 p-6 rounded-2xl border border-slate-800 backdrop-blur no-print">
+            <div class="flex items-center space-x-4">
+                <img src="/orca_avatar.png"
+                    class="w-14 h-14 rounded-full border-2 border-indigo-500/50 shadow-lg shadow-indigo-900/30"
+                    alt="Orca">
+                <div>
+                    <h1 class="text-3xl font-bold gradient-text tracking-tight">Orca Intelligence</h1>
+                    <p class="text-slate-400 text-xs tracking-widest uppercase mt-1">Enterprise AI & Quantum
+                        Optimization</p>
+                </div>
+            </div>
+            <div class="text-right">
+                <div class="text-xs font-mono text-indigo-400 mb-1">v2.2 Beta</div>
+                <div class="text-[10px] text-slate-500">POWERED BY SAFLA™</div>
+            </div>
+        </header>
+
+        <!-- Progress -->
+        <div class="mb-10 px-2 no-print">
+            <div class="flex justify-between text-xs font-bold text-slate-500 mb-3 uppercase tracking-wider">
+                <span :class="{'text-indigo-400': step >= 1}">1. Company Profile</span>
+                <span :class="{'text-indigo-400': step >= 2}">2. Current Workflow</span>
+                <span :class="{'text-indigo-400': step >= 3}">3. Orca Config</span>
+                <span :class="{'text-indigo-400': step >= 4}">4. ROI Analysis</span>
+            </div>
+            <div class="w-full bg-slate-900 h-2 rounded-full overflow-hidden">
+                <div class="h-full bg-indigo-500 shadow-[0_0_15px_rgba(99,102,241,0.5)] transition-all duration-500 ease-out"
+                    :style="{ width: ((step-1)/3)*100 + '%' }"></div>
+            </div>
+        </div>
+
+        <!-- Print Header -->
+        <div class="hidden print:block mb-8 border-b-2 border-black pb-4">
+            <h1 class="text-4xl font-bold flex items-center gap-4"><img src="/orca_avatar.png" class="w-12 h-12"> Orca
+                Proposal</h1>
+            <p>Prepared for: {{ form.companyName }}</p>
+            <p>Date: {{ new Date().toLocaleDateString() }}</p>
+        </div>
+
+        <div class="min-h-[500px]">
+
+            <!-- STEP 1: COMPANY PROFILE -->
+            <div v-if="step === 1" class="animate-fade-in">
+                <div
+                    class="card p-8 rounded-2xl shadow-2xl border-t-4 border-t-indigo-500 max-w-2xl mx-auto bg-slate-900">
+                    <h2 class="text-2xl font-bold text-white mb-6">Company Profile</h2>
+                    <div class="space-y-6">
+                        <div>
+                            <label class="block text-sm font-bold text-slate-300 mb-2">Company Name</label>
+                            <input v-model="form.companyName" type="text"
+                                class="w-full input-dark p-3 rounded-lg border focus:ring-2 focus:ring-indigo-500 outline-none">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-bold text-slate-300 mb-2">Total Employees <span
+                                    class="info-button"
+                                    data-tippy-content="Determines your base pricing tier (Small, Mid, Enterprise)">?</span></label>
+                            <input v-model.number="form.employees" type="number"
+                                class="w-full input-dark p-3 rounded-lg border focus:ring-2 focus:ring-indigo-500 outline-none">
+                        </div>
+                        <div v-if="detectedTier"
+                            class="p-4 bg-indigo-900/20 border border-indigo-500/50 rounded-lg flex items-center justify-between">
+                            <div>
+                                <div class="text-xs text-indigo-300 uppercase font-bold">Detected Tier</div>
+                                <div class="text-lg font-bold text-white">{{ detectedTier.name }}</div>
+                            </div>
+                            <div class="text-right">
+                                <div class="text-sm font-mono text-white">${{ detectedTier.bundlePrice.toLocaleString()
+                                    }}/mo</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- STEP 2: HUMAN BASELINE -->
+            <div v-if="step === 2" class="animate-fade-in">
+                <div
+                    class="card p-8 rounded-2xl shadow-2xl border-t-4 border-t-indigo-500 max-w-2xl mx-auto bg-slate-900">
+                    <h2 class="text-2xl font-bold text-white mb-6">Current Workflow Baseline</h2>
+                    <p class="text-sm text-slate-400 mb-6">We compare Orca against your manual Analysis / Due Diligence
+                        costs.</p>
+
+                    <div class="grid grid-cols-2 gap-6">
+                        <div>
+                            <label class="flex items-center text-sm font-bold text-slate-300 mb-2">
+                                Analyst Team Size
+                                <span class="info-button"
+                                    data-tippy-content="The number of full-time analysts or associates currently performing due diligence, research, or data synthesis tasks manually.">?</span>
+                            </label>
+                            <input v-model.number="form.analysts" type="number"
+                                class="w-full input-dark p-3 rounded-lg border outline-none">
+                        </div>
+                        <div>
+                            <label class="flex items-center text-sm font-bold text-slate-300 mb-2">
+                                Avg. Annual Salary
+                                <span class="info-button"
+                                    data-tippy-content="The fully burdened annual cost per analyst, including salary, benefits, and overhead (typically Salary + 30%).">?</span>
+                            </label>
+                            <input v-model.number="form.avgSalary" type="number"
+                                class="w-full input-dark p-3 rounded-lg border outline-none">
+                        </div>
+                        <div>
+                            <label class="flex items-center text-sm font-bold text-slate-300 mb-2">
+                                Projects / Deals per Year
+                                <span class="info-button"
+                                    data-tippy-content="The total number of deals, research projects, or deep-dive analyses your team completes annually.">?</span>
+                            </label>
+                            <input v-model.number="form.dealsPerYear" type="number"
+                                class="w-full input-dark p-3 rounded-lg border outline-none">
+                        </div>
+                        <div>
+                            <label class="flex items-center text-sm font-bold text-slate-300 mb-2">
+                                Hours per Project
+                                <span class="info-button"
+                                    data-tippy-content="The average time spent by one analyst to complete one end-to-end project, including research, synthesis, and reporting.">?</span>
+                            </label>
+                            <input v-model.number="form.hoursPerDeal" type="number"
+                                class="w-full input-dark p-3 rounded-lg border outline-none">
+                        </div>
+                    </div>
+
+                    <div class="mt-8 p-4 bg-slate-800 rounded-lg border border-slate-700">
+                        <div class="flex justify-between items-center text-sm">
+                            <span class="text-slate-400">Current Annual Spend:</span>
+                            <span class="font-bold text-white font-mono">${{ (form.analysts *
+                                form.avgSalary).toLocaleString() }}</span>
+                        </div>
+                        <div class="flex justify-between items-center text-sm mt-2">
+                            <span class="text-slate-400">Cost per Project:</span>
+                            <span class="font-bold text-white font-mono">${{ ((form.analysts * form.avgSalary) /
+                                form.dealsPerYear).toLocaleString() }}</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- STEP 3: ORCA CONFIG -->
+            <div v-if="step === 3" class="animate-fade-in">
+                <div
+                    class="card p-8 rounded-2xl shadow-2xl border-t-4 border-t-indigo-500 max-w-2xl mx-auto bg-slate-900">
+                    <h2 class="text-2xl font-bold text-white mb-6">Orca Configuration</h2>
+
+                    <div class="space-y-6">
+                        <!-- Deployment Path -->
+                        <div>
+                            <label class="block text-sm font-bold text-slate-300 mb-3">Deployment Path</label>
+                            <div class="grid grid-cols-1 gap-3">
+                                <div @click="form.isBYOD = false"
+                                    :class="{'border-indigo-500 bg-indigo-900/10': !form.isBYOD}"
+                                    class="p-4 border border-slate-700 rounded-lg cursor-pointer hover:bg-slate-800 transition-all">
+                                    <div class="flex justify-between">
+                                        <div class="font-bold text-white">Path 1: Orca + Echo Bundle</div>
+                                        <div v-if="!form.isBYOD" class="text-indigo-400">✓</div>
+                                    </div>
+                                    <div class="text-xs text-slate-400 mt-1">Recommended (85% Adoption). Includes
+                                        Unlimited Echo Connectors & Universal Search.</div>
+
+                                    <!-- Echo Inputs (Only Show if Path 1) -->
+                                    <div v-if="!form.isBYOD"
+                                        class="mt-4 pt-4 border-t border-slate-700/50 animate-fade-in">
+                                        <div class="text-xs font-bold text-indigo-300 uppercase mb-2">Echo RAG Data
+                                            Sources</div>
+                                        <div class="grid grid-cols-2 gap-3 mb-3">
+                                            <label class="flex items-center space-x-2 text-xs text-slate-300">
+                                                <input type="checkbox" checked disabled class="accent-indigo-500">
+                                                <span>Universal Search (Included)</span>
+                                            </label>
+                                            <label class="flex items-center space-x-2 text-xs text-slate-300">
+                                                <input type="checkbox" checked disabled class="accent-indigo-500">
+                                                <span>Voice Interface (Included)</span>
+                                            </label>
+                                            <label class="flex items-center space-x-2 text-xs text-slate-300">
+                                                <input type="checkbox" checked disabled class="accent-indigo-500">
+                                                <span>Multi-modal (Included)</span>
+                                            </label>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div @click="toggleBYOD" :class="{'border-indigo-500 bg-indigo-900/10': form.isBYOD}"
+                                    class="p-4 border border-slate-700 rounded-lg cursor-pointer hover:bg-slate-800 transition-all">
+                                    <div class="flex justify-between">
+                                        <div class="font-bold text-white">Path 2: BYOD (Enterprise Only)</div>
+                                        <div v-if="form.isBYOD" class="text-indigo-400">✓</div>
+                                    </div>
+                                    <div class="text-xs text-slate-400 mt-1">Bring Your Own Data (Snowflake/Databricks).
+                                        No Echo included.</div>
+                                    <div v-if="form.employees < 1000" class="text-[10px] text-orange-400 mt-1">Note:
+                                        Selecting this upgrades pricing to Enterprise Tier ($9,999/mo).</div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Upgrades -->
+                        <div v-if="form.employees >= 1000 || form.isBYOD">
+                            <label class="block text-sm font-bold text-slate-300 mb-3">Performance Upgrades</label>
+                            <div
+                                class="flex items-center space-x-3 p-4 bg-slate-800 rounded-lg border border-slate-700">
+                                <input v-model="form.wantQuantum" type="checkbox"
+                                    class="w-5 h-5 rounded bg-slate-900 border-slate-600 text-indigo-500">
+                                <div>
+                                    <div class="flex items-center">
+                                        <span class="font-bold text-white">Quantum Acceleration</span>
+                                        <span class="info-button"
+                                            data-tippy-content="Proprietary hardware integration for massively parallel optimization problems (e.g. portfolio rebalancing). Adds $25k/mo.">?</span>
+                                    </div>
+                                    <div class="text-xs text-slate-400">Add Quantum optimization ($25k/mo). Included in
+                                        Quantum Tier.</div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Usage -->
+                        <!-- Competitor Benchmark -->
+                        <div>
+                            <label class="block text-sm font-bold text-slate-300 mb-3">Comparison Benchmark</label>
+                            <select v-model="form.competitor"
+                                class="w-full input-dark p-3 rounded-lg border outline-none">
+                                <option v-for="comp in competitors" :value="comp.id">{{ comp.name }}</option>
+                            </select>
+                            <div class="text-xs text-slate-400 mt-1">Select a competitor to compare ROI against in Step
+                                4.</div>
+                        </div>
+
+                        <div>
+                            <label class="flex items-center text-sm font-bold text-slate-300 mb-2">
+                                Est. Monthly Tokens (Millions)
+                                <span class="info-button"
+                                    data-tippy-content="Orca uses tokens to process reading (input) and writing (output). 1M tokens ≈ 750,000 words. Most usage is covered by your Tier's allowance (Small: 5M, Mid: 25M, Ent: 100M).">?</span>
+                            </label>
+                            <input v-model.number="form.monthlyTokens" type="range" min="0" max="500000000"
+                                step="1000000"
+                                class="w-full h-2 bg-slate-700 rounded-lg appearance-none cursor-pointer">
+                            <div class="flex justify-between text-xs font-mono mt-2">
+                                <span>{{ (form.monthlyTokens / 1000000).toFixed(0) }}M Tokens</span>
+                                <span class="text-indigo-400">+${{
+                                    calculateTokenCost((form.monthlyTokens)).toLocaleString() }}/mo</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- STEP 4: ROI DASHBOARD -->
+            <div v-if="step === 4" class="animate-fade-in">
+                <div v-if="result" class="space-y-6">
+                    <div class="flex justify-between items-end mb-2">
+                        <h2 class="text-3xl font-bold text-white">Investment Analysis</h2>
+                        <div class="text-right no-print">
+                            <div
+                                class="px-3 py-1 bg-indigo-900/30 text-indigo-400 rounded border border-indigo-500/30 text-xs font-bold uppercase tracking-wider">
+                                {{ result.pricing.tier.name }} Tier
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Top Stats (Clickable) -->
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+
+                        <div @click="toggleDetail('investment')"
+                            class="card p-5 rounded-xl border-l-4 border-l-indigo-500 cursor-pointer hover:bg-slate-800 transition-colors relative">
+                            <div class="text-slate-400 text-xs uppercase font-bold">Annual Investment</div>
+                            <div class="text-3xl font-bold text-white mt-1">${{ (result.pricing.totalMonthly * 12 +
+                                result.pricing.setupFee).toLocaleString() }}</div>
+                            <div class="text-[10px] text-slate-500 mt-2">Inc. ${{
+                                result.pricing.setupFee.toLocaleString() }} Setup</div>
+                            <div v-if="detailView === 'investment'"
+                                class="absolute -bottom-2 left-1/2 transform -translate-x-1/2 text-indigo-500">▼</div>
+                        </div>
+
+                        <div @click="toggleDetail('savings')"
+                            class="card p-5 rounded-xl border-l-4 border-l-emerald-500 cursor-pointer hover:bg-slate-800 transition-colors relative">
+                            <div class="text-slate-400 text-xs uppercase font-bold">Est. Annual Savings</div>
+                            <div class="text-3xl font-bold text-emerald-400 mt-1">${{
+                                result.roi.orca.savingsVsHuman.toLocaleString() }}</div>
+                            <div class="text-[10px] text-slate-500 mt-2">vs Human Baseline</div>
+                            <div v-if="detailView === 'savings'"
+                                class="absolute -bottom-2 left-1/2 transform -translate-x-1/2 text-emerald-500">▼</div>
+                        </div>
+
+                        <div @click="toggleDetail('throughput')"
+                            class="card p-5 rounded-xl border-l-4 border-l-purple-500 cursor-pointer hover:bg-slate-800 transition-colors relative">
+                            <div class="text-slate-400 text-xs uppercase font-bold">Throughput Gain</div>
+                            <div class="text-3xl font-bold text-purple-400 mt-1">10x</div>
+                            <div class="text-[10px] text-slate-500 mt-2 text-purple-300/60 font-mono">{{
+                                result.roi.orca.throughput.toLocaleString() }} deals/yr capacity</div>
+                            <div v-if="detailView === 'throughput'"
+                                class="absolute -bottom-2 left-1/2 transform -translate-x-1/2 text-purple-500">▼</div>
+                        </div>
+                    </div>
+
+                    <!-- DRILL DOWN ROW (Dynamic) -->
+                    <div v-if="detailView"
+                        class="animate-fade-in bg-slate-900 border border-slate-700 p-6 rounded-xl relative">
+                        <button @click="detailView = null"
+                            class="absolute top-4 right-4 text-slate-500 hover:text-white">✕</button>
+
+                        <div v-if="detailView === 'investment'">
+                            <h3 class="text-lg font-bold text-white mb-4">Investment Breakdown</h3>
+                            <div class="grid grid-cols-2 gap-4 text-sm">
+                                <div class="p-3 bg-slate-800 rounded">
+                                    <div class="text-slate-400 text-xs uppercase">Base Subscription</div>
+                                    <div class="text-lg font-bold text-white">${{
+                                        result.pricing.baseMonthly.toLocaleString() }}<span
+                                            class="text-xs text-slate-500">/mo</span></div>
+                                </div>
+                                <div class="p-3 bg-slate-800 rounded">
+                                    <div class="text-slate-400 text-xs uppercase">Token Usage (Est)</div>
+                                    <div class="text-lg font-bold text-white">${{
+                                        result.pricing.tokenCost.toLocaleString() }}<span
+                                            class="text-xs text-slate-500">/mo</span></div>
+                                </div>
+                                <div class="p-3 bg-slate-800 rounded">
+                                    <div class="text-slate-400 text-xs uppercase">One-Time Setup</div>
+                                    <div class="text-lg font-bold text-white">${{
+                                        result.pricing.setupFee.toLocaleString() }}</div>
+                                </div>
+                                <div class="p-3 bg-slate-800 rounded border border-indigo-500/30">
+                                    <div class="text-slate-400 text-xs uppercase">Total Year 1</div>
+                                    <div class="text-lg font-bold text-indigo-400">${{ (result.pricing.totalMonthly * 12
+                                        + result.pricing.setupFee).toLocaleString() }}</div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div v-if="detailView === 'savings'">
+                            <h3 class="text-lg font-bold text-white mb-4">Savings Analysis</h3>
+                            <p class="text-sm text-slate-400 mb-4">Savings calculated by subtracting total Orca Year 1
+                                investment from your current Human Analyst Baseline costs.</p>
+                            <div class="flex items-center justify-between p-4 bg-slate-800 rounded-lg mb-2">
+                                <div>
+                                    <div class="text-xs text-slate-500">Current Spend</div>
+                                    <div class="text-xl font-bold text-white">${{
+                                        result.roi.human.annualCost.toLocaleString() }}</div>
+                                </div>
+                                <div class="text-2xl text-slate-600">-</div>
+                                <div>
+                                    <div class="text-xs text-slate-500">Orca Investment</div>
+                                    <div class="text-xl font-bold text-indigo-400">${{ (result.pricing.totalMonthly * 12
+                                        + result.pricing.setupFee).toLocaleString() }}</div>
+                                </div>
+                                <div class="text-2xl text-slate-600">=</div>
+                                <div>
+                                    <div class="text-xs text-emerald-500 font-bold uppercase">Net Savings</div>
+                                    <div class="text-xl font-bold text-emerald-400">${{
+                                        result.roi.orca.savingsVsHuman.toLocaleString() }}</div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div v-if="detailView === 'throughput'">
+                            <h3 class="text-lg font-bold text-white mb-4">Throughput Capacity</h3>
+                            <div class="grid grid-cols-2 gap-8">
+                                <div>
+                                    <div class="text-sm font-bold text-slate-300">Human Limit</div>
+                                    <div class="text-3xl font-bold text-slate-500">{{ result.roi.human.throughput }}
+                                        <span class="text-sm font-normal">deals/yr</span>
+                                    </div>
+                                    <div class="text-xs text-slate-500 mt-1">Based on {{ form.hoursPerDeal }} hrs/deal
+                                    </div>
+                                </div>
+                                <div>
+                                    <div class="text-sm font-bold text-purple-400">Orca Capacity</div>
+                                    <div class="text-3xl font-bold text-purple-400 font-mono">{{
+                                        result.roi.orca.throughput.toLocaleString() }} <span
+                                            class="text-sm font-normal">deals/yr</span></div>
+                                    <div class="text-xs text-slate-500 mt-1">Conservative 10x multiplier (Technical
+                                        limit: 600x)</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Detailed Comparison Charts (Always Visible) -->
+                    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                        <!-- Cost Breakdown -->
+                        <div>
+                            <div class="card p-6 rounded-xl bg-slate-900/50 cursor-pointer hover:border-indigo-500 transition-colors"
+                                @click="toggleDetail('cost_chart_detail')">
+                                <h3 class="text-lg font-bold text-white mb-4">Cost Comparison 🔍</h3>
+                                <div class="space-y-4">
+                                    <!-- Human -->
+                                    <div class="flex items-center">
+                                        <div class="w-32 text-sm text-slate-400">Human Team</div>
+                                        <div class="flex-1 h-8 bg-slate-800 rounded-r overflow-hidden relative group">
+                                            <div class="h-full bg-slate-600 flex items-center px-2 text-xs text-white whitespace-nowrap"
+                                                style="width: 100%">
+                                                ${{ result.roi.human.annualCost.toLocaleString() }}
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <!-- Competitor -->
+                                    <div class="flex items-center">
+                                        <div class="w-32 text-sm text-slate-400">{{ result.roi.competitor.name }}</div>
+                                        <div class="flex-1 h-8 bg-slate-800 rounded-r overflow-hidden relative">
+                                            <div class="h-full bg-red-900/50 border-r border-red-500 flex items-center px-2 text-xs text-red-200 whitespace-nowrap"
+                                                :style="{width: (result.roi.competitor.annual / result.roi.human.annualCost * 100) + '%'}">
+                                                ${{ result.roi.competitor.annual.toLocaleString() }}
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <!-- Orca -->
+                                    <div class="flex items-center">
+                                        <div class="w-32 text-sm font-bold text-white">Orca Intelligence</div>
+                                        <div
+                                            class="flex-1 h-10 bg-slate-800 rounded-r overflow-hidden relative shadow-[0_0_15px_rgba(99,102,241,0.2)]">
+                                            <div class="h-full bg-indigo-600 flex items-center px-2 text-sm font-bold text-white whitespace-nowrap"
+                                                :style="{width: (result.roi.orca.annualCost / result.roi.human.annualCost * 100) + '%'}">
+                                                ${{ result.roi.orca.annualCost.toLocaleString() }}
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Detail Box for Cost (Appears below) -->
+                            <div v-if="detailView === 'cost_chart_detail'"
+                                class="mt-4 p-4 bg-slate-800/50 border border-slate-700 rounded-lg animate-fade-in">
+                                <h4 class="text-sm font-bold text-white mb-2">Cost Efficiency Data</h4>
+                                <ul class="text-xs text-slate-400 space-y-1">
+                                    <li>• Orca is <span class="text-emerald-400 font-bold">{{ ((1 -
+                                            (result.roi.orca.annualCost / result.roi.human.annualCost)) *
+                                            100).toFixed(0) }}% cheaper</span> than current Human Baseline.</li>
+                                    <li>• Orca is <span class="text-indigo-400 font-bold">{{ ((1 -
+                                            (result.roi.orca.annualCost / result.roi.competitor.annual)) *
+                                            100).toFixed(0) }}% cheaper</span> than {{ result.roi.competitor.name }}.
+                                    </li>
+                                    <li>• Includes full SAFLA integration and FACT caching savings.</li>
+                                </ul>
+                            </div>
+                        </div>
+
+                        <!-- Speed/Accuracy Chart -->
+                        <div>
+                            <div class="card p-6 rounded-xl bg-slate-900/50 cursor-pointer hover:border-indigo-500 transition-colors"
+                                @click="toggleDetail('performance_detail')">
+                                <h3 class="text-lg font-bold text-white mb-4 flex items-center">
+                                    Performance: SAFLA Learning
+                                    <span class="info-button ml-2" @click.stop
+                                        data-tippy-content="SAFLA (Self-Aware Feedback Loop Algorithm) continuously improves accuracy by learning from human corrections, achieving near-perfect precision over time.">?</span>
+                                </h3>
+                                <div class="relative h-48 w-full">
+                                    <canvas id="perfChart"></canvas>
+                                </div>
+                            </div>
+
+                            <!-- Detail Box for Performance (Appears below) -->
+                            <div v-if="detailView === 'performance_detail'"
+                                class="mt-4 p-4 bg-slate-800/50 border border-slate-700 rounded-lg animate-fade-in">
+                                <h4 class="text-sm font-bold text-white mb-3">SAFLA Accuracy Milestones</h4>
+                                <div class="grid grid-cols-3 gap-2 text-center">
+                                    <div class="p-2 bg-slate-800 rounded border border-slate-700">
+                                        <div class="text-lg font-bold text-slate-400">76%</div>
+                                        <div class="text-[10px] text-slate-500 uppercase">Start</div>
+                                    </div>
+                                    <div class="p-2 bg-slate-800 rounded border border-indigo-500/50">
+                                        <div class="text-lg font-bold text-indigo-400">94%</div>
+                                        <div class="text-[10px] text-slate-500 uppercase">Month 6</div>
+                                    </div>
+                                    <div class="p-2 bg-slate-800 rounded border border-purple-500/50">
+                                        <div class="text-lg font-bold text-purple-400">98%</div>
+                                        <div class="text-[10px] text-slate-500 uppercase">Quantum</div>
+                                    </div>
+                                </div>
+
+
+                                <p class="text-[10px] text-slate-400 mt-2 italic">Data based on actual client
+                                    optimizations using Self-Aware Feedback Loop Algorithm (SAFLA).</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Project Margin Analysis (Separate Card) -->
+                    <div class="mt-8">
+                        <div class="card p-6 rounded-xl bg-slate-900/50 cursor-pointer hover:border-emerald-500 transition-colors border-l-4 border-l-emerald-500/50"
+                            @click="marginDetailOpen = !marginDetailOpen">
+                            <div class="flex justify-between items-center">
+                                <div>
+                                    <h3 class="text-lg font-bold text-white flex items-center gap-2">Project Margin
+                                        Strength <span
+                                            class="text-xs text-slate-500 font-normal px-2 py-1 bg-slate-800 rounded border border-slate-700">Click
+                                            to drill down</span></h3>
+                                    <p class="text-sm text-slate-400 mt-1">Impact on unit economics per deal vs Human
+                                        Baseline.</p>
+                                </div>
+                                <div class="text-right">
+                                    <div class="text-3xl font-bold text-emerald-400">+${{ (result.roi.human.costPerDeal
+                                        - result.roi.orca.costPerDeal).toLocaleString(undefined,
+                                        {maximumFractionDigits:0}) }}</div>
+                                    <div class="text-xs text-emerald-500/80 uppercase font-bold">Margin Gain / Deal
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Margin Detail -->
+                        <div v-if="marginDetailOpen"
+                            class="mt-4 p-6 bg-slate-800/50 border border-slate-700 rounded-xl animate-fade-in relative">
+                            <button @click.stop="marginDetailOpen = false"
+                                class="absolute top-4 right-4 text-slate-500 hover:text-white">✕</button>
+
+                            <h4 class="text-lg font-bold text-white mb-6">Unit Economics Breakdown</h4>
+
+                            <div class="grid grid-cols-1 md:grid-cols-3 gap-8 text-center mb-8">
+                                <div class="p-4 bg-slate-900 rounded-xl border border-slate-800">
+                                    <div class="text-slate-400 text-xs uppercase font-bold mb-2">Human Cost / Deal</div>
+                                    <div class="text-2xl font-bold text-slate-300">${{
+                                        result.roi.human.costPerDeal.toLocaleString(undefined,
+                                        {maximumFractionDigits:0}) }}</div>
+                                </div>
+                                <div class="p-4 bg-slate-900 rounded-xl border border-indigo-900/50">
+                                    <div class="text-indigo-400 text-xs uppercase font-bold mb-2">Orca Cost / Deal</div>
+                                    <div class="text-2xl font-bold text-indigo-400">${{
+                                        result.roi.orca.costPerDeal.toLocaleString(undefined, {maximumFractionDigits:0})
+                                        }}</div>
+                                </div>
+                                <div class="p-4 bg-emerald-900/20 rounded-xl border border-emerald-500/30">
+                                    <div class="text-emerald-400 text-xs uppercase font-bold mb-2">Net Margin Gain</div>
+                                    <div class="text-2xl font-bold text-emerald-400">+${{ (result.roi.human.costPerDeal
+                                        - result.roi.orca.costPerDeal).toLocaleString(undefined,
+                                        {maximumFractionDigits:0}) }}</div>
+                                </div>
+                            </div>
+
+                            <div class="bg-indigo-900/10 border border-indigo-500/20 p-4 rounded-lg">
+                                <h5 class="font-bold text-white mb-2 text-sm">Volume Impact Opportunity</h5>
+                                <p class="text-xs text-slate-300 leading-relaxed">
+                                    With Orca's 10x throughput capacity ({{ result.roi.orca.throughput.toLocaleString()
+                                    }} deals/yr), this margin improvement creates a potential
+                                    <span class="text-emerald-400 font-bold">${{ ((result.roi.human.costPerDeal -
+                                        result.roi.orca.costPerDeal) *
+                                        result.roi.orca.throughput).toLocaleString(undefined, {maximumFractionDigits:0})
+                                        }}</span>
+                                    annual value surplus compared to scaling human teams to match this volume.
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+
+
+                    <!-- Print Footer -->
+                    <div class="hidden print:block border-t border-gray-300 pt-8 mt-8 text-xs text-gray-500">
+                        <p>Generated by Orca Estimator v2.2 Beta. Pricing subject to Master Service Agreement.</p>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+
+        <!-- Nav -->
+        <div
+            class="flex justify-between mt-10 pt-6 border-t border-slate-900 sticky bottom-0 bg-slate-950/90 backdrop-blur pb-4 z-10 no-print">
+            <button v-if="step > 1" @click="step--"
+                class="text-slate-400 hover:text-white font-bold text-sm px-6 py-3 rounded-lg">&larr; Back</button>
+            <div v-else></div>
+            <button v-if="step < 4" @click="step++"
+                class="bg-indigo-600 hover:bg-indigo-500 text-white px-8 py-3 rounded-lg font-bold shadow-lg shadow-indigo-900/20">Next
+                Step &rarr;</button>
+            <button v-else @click="window.print()"
+                class="bg-emerald-600 hover:bg-emerald-500 text-white px-8 py-3 rounded-lg font-bold shadow-lg shadow-emerald-900/20">Print
+                Proposal</button>
+        </div>
+
+    </div>
+
+    <script>
+        const { createApp, nextTick, computed } = Vue
+
+        const TIERS = {
+            small: { name: 'Small Business', bundlePrice: 1499, includedTokens: 5000000 },
+            mid: { name: 'Mid-Market', bundlePrice: 4999, includedTokens: 25000000 },
+            ent: { name: 'Enterprise', bundlePrice: 14998, includedTokens: 100000000 },
+            quant: { name: 'Quantum Ent.', bundlePrice: 24999, includedTokens: 100000000 }
+        };
+
+        createApp({
+            data() {
+                return {
+                    step: 1,
+                    detailView: null,
+                    marginDetailOpen: false,
+                    competitors: [],
+                    form: {
+                        companyName: 'Acme Corp',
+                        employees: 150,
+                        analysts: 5,
+                        avgSalary: 120000,
+                        dealsPerYear: 50,
+                        hoursPerDeal: 40,
+                        isBYOD: false,
+                        wantQuantum: false,
+                        monthlyTokens: 10000000,
+                        competitor: 'palantir'
+                    },
+                    result: null,
+                    chartInstance: null
+                }
+            },
+            computed: {
+                detectedTier() {
+                    const e = this.form.employees;
+                    if (this.form.wantQuantum) return TIERS.quant;
+                    if (e >= 1000) return TIERS.ent;
+                    if (e >= 100) return TIERS.mid;
+                    return TIERS.small;
+                }
+            },
+            watch: {
+                step(n) {
+                    if (n === 4) {
+                        this.calculate().then(() => nextTick(() => this.renderChart()));
+                    }
+                    nextTick(() => tippy('[data-tippy-content]'));
+                },
+                form: {
+                    handler() {
+                        if (this.step === 4) this.calculate();
+                        nextTick(() => tippy('[data-tippy-content]'));
+                    },
+                    deep: true
+                }
+            },
+            methods: {
+                toggleBYOD() {
+                    this.form.isBYOD = true;
+                    // No formatting restriction, just updated UI warning.
+                },
+                toggleDetail(view) {
+                    this.detailView = (this.detailView === view) ? null : view;
+                    // Only re-render chart if we are VIEWING the performance chart detail OR if the main chart is visible
+                    // Actually, chart is always visible now. 
+                    // If we close detail, chart persists.
+                    if (view === 'performance_detail') {
+                        nextTick(() => this.renderChart());
+                    }
+                },
+                async calculate() {
+                    try {
+                        const res = await fetch('/api/calculate', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify(this.form)
+                        });
+                        const data = await res.json();
+                        if (data.success) this.result = data.data;
+                    } catch (e) { }
+                },
+                calculateTokenCost(tokens) {
+                    const tierTokens = this.detectedTier.includedTokens;
+                    const billable = Math.max(0, tokens - tierTokens);
+                    return (billable / 1000) * 0.02;
+                },
+                renderChart() {
+                    const ctx = document.getElementById('perfChart');
+                    if (!ctx) return;
+                    if (this.chartInstance) this.chartInstance.destroy();
+
+                    const isQuantum = this.form.wantQuantum;
+                    const labels = ['Start', 'Month 1', 'Month 3', 'Month 6', isQuantum ? 'Quantum' : 'Year 1'];
+                    const accuracyData = [76, 82, 89, 94, isQuantum ? 98 : 95];
+
+                    this.chartInstance = new Chart(ctx, {
+                        type: 'line',
+                        data: {
+                            labels: labels,
+                            datasets: [{
+                                label: 'Accuracy (%)',
+                                data: accuracyData,
+                                borderColor: '#6366f1',
+                                backgroundColor: 'rgba(99, 102, 241, 0.1)',
+                                fill: true,
+                                tension: 0.4
+                            },
+                            {
+                                label: 'Human Baseline',
+                                data: [76, 76, 76, 76, 76],
+                                borderColor: '#94a3b8',
+                                borderDash: [5, 5],
+                                borderWidth: 2,
+                                pointRadius: 0
+                            }]
+                        },
+                        options: {
+                            responsive: true,
+                            maintainAspectRatio: false,
+                            plugins: { legend: { labels: { color: '#cbd5e1' } } },
+                            scales: {
+                                y: { beginAtZero: false, min: 70, grid: { color: '#1e293b' }, ticks: { color: '#94a3b8' } },
+                                x: { grid: { color: '#1e293b' }, ticks: { color: '#94a3b8' } }
+                            }
+                        }
+                    });
+                }
+            },
+            async mounted() {
+                tippy('[data-tippy-content]');
+                try {
+                    const res = await fetch('/api/metadata');
+                    const data = await res.json();
+                    if (data.competitors) this.competitors = Object.values(data.competitors);
+                } catch (e) { }
+            }
+        }).mount('#app')
+    </script>
+</body>
+
+</html>
