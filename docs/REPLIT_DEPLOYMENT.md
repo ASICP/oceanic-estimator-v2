@@ -11,15 +11,24 @@ Replit has a habit of modifying configuration files (like `.replit`, `replit.nix
 
 To force Replit to accept your GitHub version as the absolute truth, run these commands in the **Replit Shell**:
 
-### Option 1: The "Hard Reset" (Recommended)
-This calculates the difference between Replit and GitHub, deletes *all* local Replit changes, and makes it an exact mirror of your main branch.
+### Option 1: The "Hard Reset" (Production Safe)
+This sequence ensures you are running the optimized production build, not the development server.
 
 ```bash
+# 1. Fetch latest code and force-match GitHub
 git fetch --all
 git reset --hard origin/main
+
+# 2. Update dependencies (Critical if package.json changed)
 npm install
-npm run dev
+
+# 3. Build & Start (Production Mode)
+npm run build
+npm run start
 ```
+
+**Why npm install?** Even in production, you must install/update the libraries defined in `package.json` to ensure the app has the tools it needs to run.
+**Why build & start?** `npm run dev` is slower and meant for editing. `npm run build` creates an optimized, high-performance version of your app, and `npm run start` serves it efficiently.
 
 ### Option 2: The UI Method
 1. Open the **Tools > Git** pane in Replit.
