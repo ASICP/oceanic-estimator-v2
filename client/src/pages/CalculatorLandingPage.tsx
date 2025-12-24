@@ -23,6 +23,14 @@ export default function CalculatorLandingPage() {
             badge: "Large Scale"
         },
         {
+            id: "echo",
+            title: "Echo RAG Calculator",
+            description: "Pricing and ROI estimation for Enterprise RAG Knowledge Bases.",
+            icon: <Zap className="h-8 w-8 text-yellow-500" />,
+            href: "/echo",
+            badge: "RAG & Knowledge"
+        },
+        {
             id: "dolphin",
             title: "Dolphin Estimator",
             description: "Agent Workforce Orchestration & Pricing for mid-sized scenarios.",
