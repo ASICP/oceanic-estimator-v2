@@ -78,8 +78,19 @@ export function serveStatic(app: Express) {
 
   app.use(express.static(distPath));
 
-  // fall through to index.html if the file doesn't exist
-  app.use("*", (_req, res) => {
-    res.sendFile(path.resolve(distPath, "index.html"));
+  // fall through to index.html only for non-file routes
+  app.use("*", (req, res) => {
+    // If the request is for a static file that exists, express.static already handled it
+    // Only serve index.html for client-side routes (no file extension or .html requests that weren't found)
+    const requestPath = path.join(distPath, req.originalUrl);
+
+    // Check if file exists - if so, it should have been served by express.static
+    if (fs.existsSync(requestPath) && fs.statSync(requestPath).isFile()) {
+      // File exists but wasn't served - send it now
+      res.sendFile(requestPath);
+    } else {
+      // No file found - this is a client-side route, serve React app
+      res.sendFile(path.resolve(distPath, "index.html"));
+    }
   });
 }
