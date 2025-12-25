@@ -29,6 +29,9 @@ import { db } from "./db";
 import { pricingTiers, competitorPricing } from "@shared/schema";
 import { eq } from "drizzle-orm";
 
+// Import Dolphin pricing engine
+const DolphinCalculator = require("./dolphin-pricing-engine");
+
 // Initialize Stripe
 if (!process.env.STRIPE_SECRET_KEY) {
   throw new Error('Missing required Stripe secret: STRIPE_SECRET_KEY');
@@ -790,6 +793,53 @@ router.get("/api/porpoise/competitors", async (req, res) => {
   } catch (error) {
     console.error("Error fetching competitors:", error);
     res.status(500).json({ error: "Failed to fetch competitors" });
+  }
+});
+
+// Dolphin Calculator endpoint
+router.post("/api/calculate", async (req, res) => {
+  try {
+    console.log('[DOLPHIN_API] Received calculation request:', JSON.stringify(req.body, null, 2));
+
+    const { agents, billingPeriod, deploymentType, addons, manualAgentCount } = req.body;
+
+    // Calculate pricing
+    const pricing = DolphinCalculator.calculateTotalMonthlyCost({
+      totalAgents: agents || manualAgentCount || 0,
+      billingPeriod: billingPeriod || 'monthly',
+      deploymentType: deploymentType || 'managed_saas',
+      addons: addons || {}
+    });
+
+    // Calculate margin
+    const margin = DolphinCalculator.calculateGrossMargin(
+      pricing.totalMonthly,
+      agents || manualAgentCount || 0
+    );
+
+    // Determine tier
+    const recommendedTier = DolphinCalculator.determineTier({
+      agents: agents || manualAgentCount || 0,
+      billingPeriod: billingPeriod || 'monthly'
+    });
+
+    const result = {
+      success: true,
+      data: {
+        pricing: {
+          ...pricing,
+          tierName: recommendedTier
+        },
+        margin,
+        recommendedTier
+      }
+    };
+
+    console.log('[DOLPHIN_API] Calculation complete:', JSON.stringify(result, null, 2));
+    res.json(result);
+  } catch (error) {
+    console.error("[DOLPHIN_API] Error calculating costs:", error);
+    res.status(500).json({ success: false, error: "Failed to calculate costs" });
   }
 });
 
