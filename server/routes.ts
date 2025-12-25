@@ -30,7 +30,7 @@ import { pricingTiers, competitorPricing } from "@shared/schema";
 import { eq } from "drizzle-orm";
 
 // Import Dolphin pricing engine
-const DolphinCalculator = require("./dolphin-pricing-engine");
+import * as DolphinCalculator from "./dolphin-pricing-engine.js";
 
 // Initialize Stripe
 if (!process.env.STRIPE_SECRET_KEY) {

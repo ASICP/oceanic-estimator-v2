@@ -232,7 +232,7 @@ function calculateGrossMargin(revenue, totalAgents) {
     };
 }
 
-module.exports = {
+export {
     TIER_PRICING,
     BUNDLE_PRICING,
     AGENT_ROLES,
